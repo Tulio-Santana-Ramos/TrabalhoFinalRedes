@@ -13,6 +13,7 @@ int main(){
 	sockaddr_in endereco_servidor;
 
 	char mensagem[LIMITE_MENSAGEM];
+	memset(mensagem, 0, LIMITE_MENSAGEM * sizeof(char));
 
 	//criação do socket do servidor
 	fd_servidor = socket(AF_INET, SOCK_STREAM, 0);
@@ -45,6 +46,7 @@ int main(){
 	for(int i = 0; i < total.size(); i++){
 		mensagem[j++] = total[i];
 		if(i == total.size() - 1 or j == LIMITE_MENSAGEM){
+			mensagem[j] = '\0';
 			// Envia a mensagem ao servidor
 			if(send(fd_servidor, mensagem, strlen(mensagem), 0) < 0){
 				cout << "Erro ao enviar a mensagem!\n";
@@ -52,6 +54,7 @@ int main(){
 			}
 			j = 0;
 		}
+		
 	}
 
 	// Tratar aqui se receber mensagem de resposta do servidor

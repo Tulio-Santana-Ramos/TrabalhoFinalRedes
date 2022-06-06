@@ -10,8 +10,7 @@ server:
 	g++ -g -o ServerSide Servidor.o -Wall -Werror
 	rm Servidor.o
 
-all:
-	client server
+all: client server
 
 srun:
 	./ServerSide
