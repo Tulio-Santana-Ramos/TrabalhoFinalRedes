@@ -42,10 +42,10 @@ int main(void) {
 
     // Marcação do socket para a escuta de um único cliente:
     if (listen(fd_servidor, 1) == -1) {
-        cerr << "Erro na marcacao de escuta por clientes!\n";
+        cerr << "Erro na marcação de escuta por clientes!\n";
         exit(-1);
     } else {
-        cout << "Servidor escutando por requisicoes!\n";
+        cout << "Servidor escutando por requisiçõles!\n";
     }
 
     // Aceite de uma requisição:
@@ -54,17 +54,17 @@ int main(void) {
 
     // Verificação se o aceite foi válido:
     if (fd_cliente < 0){
-        cerr << "Nao foi possivel se conectar ao cliente!\n";
+        cerr << "Não foi possível se conectar ao cliente!\n";
         exit(-1);
     } 
-    cout << "Cliente conectaco no IP: " << inet_ntoa(endereco_cliente.sin_addr) << " e porta " << ntohs(endereco_cliente.sin_port);
+    cout << "Cliente conectado no IP: " << inet_ntoa(endereco_cliente.sin_addr) << " e porta " << ntohs(endereco_cliente.sin_port) << endl;
 
     // Recebimento da mensagem do cliente:
     if (recv(fd_cliente, mensagem, sizeof(mensagem), 0) == -1) {
-        cerr << "Mensagem nao recebida!\n";
+        cerr << "Mensagem não recebida!\n";
         exit(-1);
     }
-    cout << "Mensagem recebida do cliente: " << mensagem;
+    cout << "Mensagem recebida de " << inet_ntoa(endereco_cliente.sin_addr) << ": " << mensagem << endl;
 
     // Fechamento do socket:
     close(fd_servidor);
