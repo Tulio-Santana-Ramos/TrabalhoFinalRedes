@@ -92,6 +92,7 @@ int main(void) {
 
     // Fechamento do socket:
     close(fd_servidor);
+    cout << "Socket fechado!\n";
 
     return 0;
 }

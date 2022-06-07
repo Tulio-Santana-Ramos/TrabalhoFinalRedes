@@ -67,6 +67,7 @@ int main(){
     // Tratar aqui se receber mensagem de resposta do servidor
 
     close(fd_cliente);
+    cout << "Socket fechado!\n";
 
     return 0;
 }
