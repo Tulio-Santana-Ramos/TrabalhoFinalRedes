@@ -4,7 +4,7 @@
 #include <arpa/inet.h>
 #include <bits/stdc++.h>
 
-#define LIMITE_MENSAGEM 11
+#define LIMITE_MENSAGEM 21
 
 using namespace std;
 
@@ -19,6 +19,7 @@ bool conectar_servidor(int fd_cliente, sockaddr_in *endereco_servidor) {
 }
 
 bool mandar_mensagem_servidor(int fd_cliente, string mensagem_total, char* buffer_mensagem) {
+    memset(buffer_mensagem, 0, LIMITE_MENSAGEM * sizeof(char));
     // Envio da mensagem em blocos de no máximo LIMITE_MENSAGEM:
     int j = 0;
     for (int i = 0; i < mensagem_total.size(); i++) {
@@ -26,14 +27,14 @@ bool mandar_mensagem_servidor(int fd_cliente, string mensagem_total, char* buffe
         if (i == mensagem_total.size() - 1 || j == LIMITE_MENSAGEM - 1) {
             buffer_mensagem[j] = '\0';
             // Envia um bloco da mensagem ao servidor:
-            if (send(fd_cliente, buffer_mensagem, strlen(buffer_mensagem), MSG_NOSIGNAL) == -1)
+            if (send(fd_cliente, buffer_mensagem, strlen(buffer_mensagem) + 1, MSG_NOSIGNAL) == -1)
                 return false;
             j = 0;
         }
     }
     // Sinaliza final do envio
     buffer_mensagem[0] = '\0';
-    if (send(fd_cliente, buffer_mensagem, strlen(buffer_mensagem), MSG_NOSIGNAL) == -1)
+    if (send(fd_cliente, buffer_mensagem, 1, MSG_NOSIGNAL) == -1)
         return false;
     return true;
 }
@@ -43,8 +44,8 @@ int main() {
     int fd_cliente;
     sockaddr_in endereco_servidor;
 
-    char mensagem[LIMITE_MENSAGEM];
-    memset(mensagem, 0, LIMITE_MENSAGEM * sizeof(char));
+    char mensagem_cliente[LIMITE_MENSAGEM], mensagem_servidor[LIMITE_MENSAGEM];
+    memset(mensagem_cliente, 0, LIMITE_MENSAGEM * sizeof(char));
 
     // Criação do socket do cliente:
     fd_cliente = socket(AF_INET, SOCK_STREAM, 0);
@@ -72,11 +73,13 @@ int main() {
             if (entrada == "/quit")
                 shut_down = true;
             // Tentativa de envio da mensagem:
-            if (mandar_mensagem_servidor(fd_cliente, entrada, mensagem))
+            if (mandar_mensagem_servidor(fd_cliente, entrada, mensagem_cliente))
                 cout << "Mensagem enviada com sucesso!\n";
             else
                 cerr << "Erro ao enviar a mensagem!\n";
-        }
+            if (recv(fd_cliente, mensagem_servidor, sizeof(mensagem_servidor), MSG_NOSIGNAL) != -1)
+                cout << "Servidor respondeu: " << mensagem_servidor << "\n";
+        } 
     }
 
     // Tratar aqui se receber mensagem de resposta do servidor

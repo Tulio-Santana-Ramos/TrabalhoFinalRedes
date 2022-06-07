@@ -4,7 +4,7 @@
 #include <arpa/inet.h>
 #include <bits/stdc++.h>
 
-#define LIMITE_MENSAGEM 11
+#define LIMITE_MENSAGEM 21
 
 using namespace std;
 
@@ -16,7 +16,7 @@ int main(void) {
     socklen_t tamanho_endereco;
 
     // Criação de buffer para as mensagens:
-    char mensagem[LIMITE_MENSAGEM];
+    char mensagem_cliente[LIMITE_MENSAGEM], mensagem_servidor[LIMITE_MENSAGEM];
 
     // Criação do socket do servidor:
     fd_servidor = socket(AF_INET, SOCK_STREAM, 0);
@@ -52,41 +52,48 @@ int main(void) {
     // Inicialização de variável de controle de estado do servidor:
     bool shut_down = false;
 
+    // Aceite de uma requisição:
+    tamanho_endereco = sizeof(endereco_cliente);
+    fd_cliente = accept(fd_servidor, (sockaddr*) &endereco_cliente, &tamanho_endereco);
+
+    // Verificação se o aceite foi válido:
+    if (fd_cliente < 0){
+        cerr << "Não foi possível se conectar ao cliente!\n";
+        exit(-1);
+    } 
+    cout << "Cliente conectado no IP: " << inet_ntoa(endereco_cliente.sin_addr) << " e porta " << ntohs(endereco_cliente.sin_port) << "\n";
+
     while(!shut_down) {
 
-        // Aceite de uma requisição:
-        tamanho_endereco = sizeof(endereco_cliente);
-        fd_cliente = accept(fd_servidor, (sockaddr*) &endereco_cliente, &tamanho_endereco);
-
-        // Verificação se o aceite foi válido:
-        if (fd_cliente < 0){
-            cerr << "Não foi possível se conectar ao cliente!\n";
-            exit(-1);
-        } 
-        cout << "Cliente conectado no IP: " << inet_ntoa(endereco_cliente.sin_addr) << " e porta " << ntohs(endereco_cliente.sin_port) << endl;
-
         // Recepção da(s) mensagem(s) do cliente (pois podem ser quebradas se forem maiores que LIMITE_MENSAGEM):
-        while(true){
-
-            bzero(mensagem, LIMITE_MENSAGEM);
+        while (true) {
+            bzero(mensagem_cliente, LIMITE_MENSAGEM);
 
             // Recebimento de 1 bloco da mensagem do cliente:
-            if (recv(fd_cliente, mensagem, sizeof(mensagem) - 1, 0) == -1) {
+            if (recv(fd_cliente, mensagem_cliente, sizeof(mensagem_cliente), 0) == -1) {
                 cout << "Mensagem não recebida!\n";
                 exit(-1);
             }
 
-            if (strcmp(mensagem, "/quit") == 0) {
+            if (strlen(mensagem_cliente) == 0) {
+                stpcpy(mensagem_servidor, "Mensagem recebida!");
+                send(fd_cliente, mensagem_servidor, strlen(mensagem_servidor) + 1, 0);
+                break;
+            }
+
+            if (strcmp(mensagem_cliente, "/quit") == 0) {
                 shut_down = true;
                 break;
             }
-            
-            if (strlen(mensagem) == 0)
-                break;
 
-            printf("%s\n", mensagem);
-            
-            bzero(mensagem, LIMITE_MENSAGEM);
+            if (strcmp(mensagem_cliente, "/ping") == 0) {
+                cout << "Ping recebido\n";
+                strcpy(mensagem_servidor, "pong");
+                send(fd_cliente, mensagem_servidor, strlen(mensagem_servidor) + 1, 0);
+                break;
+            } 
+
+            cout << mensagem_cliente << "\n";
         }
     }
 
