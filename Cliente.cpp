@@ -4,7 +4,7 @@
 #include <arpa/inet.h>
 #include <bits/stdc++.h>
 
-#define LIMITE_MENSAGEM 21
+#define LIMITE_MENSAGEM 4097
 
 using namespace std;
 
@@ -14,6 +14,8 @@ bool conectar_servidor(int fd_cliente, sockaddr_in *endereco_servidor) {
     // Configuração da porta e IP para o mesmo endereço do servidor:
     endereco_servidor->sin_family = AF_INET;
     endereco_servidor->sin_port = htons(2000);
+    // O endereço IP abaixo pode ser setado para o local, caso rode o servidor e esta aplicação na mesma máquina
+    // Assim como pode ser inserido um IP distinto, caso outra máquina na mesma rede esteja executando a aplicação de servidor
     endereco_servidor->sin_addr.s_addr = inet_addr("127.0.0.1");
     // Retorno da conexão com o servidor:
     return connect(fd_cliente, (sockaddr *) endereco_servidor, sizeof(*endereco_servidor)) != -1;
