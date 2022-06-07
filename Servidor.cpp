@@ -49,32 +49,45 @@ int main(void) {
         cout << "Servidor escutando por requisições!\n";
     }
 
-    // Aceite de uma requisição:
-    tamanho_endereco = sizeof(endereco_cliente);
-    fd_cliente = accept(fd_servidor, (sockaddr*) &endereco_cliente, &tamanho_endereco);
+    // Inicialização de variável de controle de estado do servidor:
+    bool shut_down = false;
 
-    // Verificação se o aceite foi válido:
-    if (fd_cliente < 0){
-        cerr << "Não foi possível se conectar ao cliente!\n";
-        exit(-1);
-    } 
-    cout << "Cliente conectado no IP: " << inet_ntoa(endereco_cliente.sin_addr) << " e porta " << ntohs(endereco_cliente.sin_port) << endl;
+    while(!shut_down) {
 
-    while(true){
-        bzero(mensagem, LIMITE_MENSAGEM);
+        // Aceite de uma requisição:
+        tamanho_endereco = sizeof(endereco_cliente);
+        fd_cliente = accept(fd_servidor, (sockaddr*) &endereco_cliente, &tamanho_endereco);
 
-        // Recebimento da mensagem do cliente:
-        if (recv(fd_cliente, mensagem, sizeof(mensagem) - 1, 0) == -1) {
-            cerr << "Mensagem não recebida!\n";
+        // Verificação se o aceite foi válido:
+        if (fd_cliente < 0){
+            cerr << "Não foi possível se conectar ao cliente!\n";
             exit(-1);
-        }
-        
-        if(strlen(mensagem) == 0)
-            break;
+        } 
+        cout << "Cliente conectado no IP: " << inet_ntoa(endereco_cliente.sin_addr) << " e porta " << ntohs(endereco_cliente.sin_port) << endl;
 
-        printf("%s\n", mensagem);
-        
-        bzero(mensagem, LIMITE_MENSAGEM);
+        // Recepção da(s) mensagem(s) do cliente (pois podem ser quebradas se forem maiores que LIMITE_MENSAGEM):
+        while(true){
+
+            bzero(mensagem, LIMITE_MENSAGEM);
+
+            // Recebimento de 1 bloco da mensagem do cliente:
+            if (recv(fd_cliente, mensagem, sizeof(mensagem) - 1, 0) == -1) {
+                cout << "Mensagem não recebida!\n";
+                exit(-1);
+            }
+
+            if (strcmp(mensagem, "/quit") == 0) {
+                shut_down = true;
+                break;
+            }
+            
+            if (strlen(mensagem) == 0)
+                break;
+
+            printf("%s\n", mensagem);
+            
+            bzero(mensagem, LIMITE_MENSAGEM);
+        }
     }
 
     // Fechamento do socket:
