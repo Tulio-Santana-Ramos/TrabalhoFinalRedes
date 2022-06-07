@@ -2,9 +2,9 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include <cstring>
+#include <bits/stdc++.h>
 
-#define LIMITE_MENSAGEM 4096
+#define LIMITE_MENSAGEM 10
 
 using namespace std;
 
@@ -45,16 +45,16 @@ int main(){
 	int j = 0;
 	for(int i = 0; i < total.size(); i++){
 		mensagem[j++] = total[i];
-		if(i == total.size() - 1 or j == LIMITE_MENSAGEM){
+		if(i == total.size() - 1 || j == LIMITE_MENSAGEM){
 			mensagem[j] = '\0';
 			// Envia a mensagem ao servidor
 			if(send(fd_servidor, mensagem, strlen(mensagem), 0) < 0){
 				cout << "Erro ao enviar a mensagem!\n";
 				exit(-1);
 			}
+			memset(mensagem, 0, LIMITE_MENSAGEM * sizeof(char));	
 			j = 0;
 		}
-		
 	}
 
 	// Tratar aqui se receber mensagem de resposta do servidor
