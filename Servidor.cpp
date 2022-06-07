@@ -4,7 +4,7 @@
 #include <arpa/inet.h>
 #include <bits/stdc++.h>
 
-#define LIMITE_MENSAGEM 21
+#define LIMITE_MENSAGEM 4097
 
 using namespace std;
 
@@ -85,7 +85,7 @@ int main(void) {
 
             if (strcmp(mensagem_cliente, "/ping") == 0) {
                 cout << "Ping recebido\n";
-                strcpy(mensagem_servidor, "pong");
+                strcpy(mensagem_servidor, "pong!");
                 send(fd_cliente, mensagem_servidor, strlen(mensagem_servidor) + 1, 0);
                 break;
             } 
