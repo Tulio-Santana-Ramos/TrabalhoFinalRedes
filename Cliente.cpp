@@ -32,7 +32,7 @@ bool mandar_mensagem_servidor(int fd_cliente, string mensagem_total, char* buffe
             j = 0;
         }
     }
-    // Sinaliza final do envio
+    // Sinaliza final do envio:
     buffer_mensagem[0] = '\0';
     if (send(fd_cliente, buffer_mensagem, 1, MSG_NOSIGNAL) == -1)
         return false;
@@ -77,8 +77,10 @@ int main() {
                 cout << "Mensagem enviada com sucesso!\n";
             else
                 cerr << "Erro ao enviar a mensagem!\n";
-            if (recv(fd_cliente, mensagem_servidor, sizeof(mensagem_servidor), MSG_NOSIGNAL) != -1)
-                cout << "Servidor respondeu: " << mensagem_servidor << "\n";
+            if (entrada == "/ping") {
+                if (recv(fd_cliente, mensagem_servidor, sizeof(mensagem_servidor), MSG_NOSIGNAL) != -1)
+                    cout << "Servidor respondeu: " << mensagem_servidor << "\n";
+            }
         } 
     }
 

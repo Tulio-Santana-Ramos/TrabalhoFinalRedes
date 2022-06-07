@@ -75,11 +75,8 @@ int main(void) {
                 exit(-1);
             }
 
-            if (strlen(mensagem_cliente) == 0) {
-                stpcpy(mensagem_servidor, "Mensagem recebida!");
-                send(fd_cliente, mensagem_servidor, strlen(mensagem_servidor) + 1, 0);
+            if (strlen(mensagem_cliente) == 0)
                 break;
-            }
 
             if (strcmp(mensagem_cliente, "/quit") == 0) {
                 shut_down = true;
