@@ -20,7 +20,7 @@ A execução de ambas as aplicações também fica por parte do [Makefile](https
 
 ### Comandos
 A aplicação, para esta primeira entrega do trabalho, conta com os comandos de '/send', '/quit', '/connect' e '/ping' por parte do Cliente. 
-- [/connect] tenta efetuar a conexão entre o cliente e o servidor configurado. Pode ser efetuado na mesma máquina ou em máquinas diferentes na mesma rede (alterando o IP do servidor dentro do arquivo de Cliente)
-- [/send] permite ao cliente enviar mensagens ao servidor. Caso a mensagem ultrapasse os 4096 caracteres, ela será particionada em diferentes mensagens para satisfazer o limite e não haver perda de informações.
-- [/ping] é utilizado para verificar o envio de mensagens por ambas as aplicações, fazendo com que, ao receber este comando, o Servidor envie uma nova mensagem ('pong!') para o Cliente conectado.
-- [/quit] fecha o socket da conexão, finalizando portanto a execução de ambas as aplicações.
+- /connect tenta efetuar a conexão entre o cliente e o servidor configurado. Pode ser efetuado na mesma máquina ou em máquinas diferentes na mesma rede (alterando o IP do servidor dentro do arquivo de Cliente)
+- /send permite ao cliente enviar mensagens ao servidor. Caso a mensagem ultrapasse os 4096 caracteres, ela será particionada em diferentes mensagens para satisfazer o limite e não haver perda de informações.
+- /ping é utilizado para verificar o envio de mensagens por ambas as aplicações, fazendo com que, ao receber este comando, o Servidor envie uma nova mensagem ('pong!') para o Cliente conectado.
+- /quit fecha o socket da conexão, finalizando portanto a execução de ambas as aplicações.
