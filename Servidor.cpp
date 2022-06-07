@@ -2,8 +2,9 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <bits/stdc++.h>
 
-#define LIMITE_MENSAGEM 4096
+#define LIMITE_MENSAGEM 10
 
 using namespace std;
 
@@ -15,7 +16,9 @@ int main(void) {
     socklen_t tamanho_endereco;
 
     // Criação de buffer para as mensagens:
-    char mensagem[LIMITE_MENSAGEM];
+    char mensagem[LIMITE_MENSAGEM], mensagem_anterior[LIMITE_MENSAGEM];
+    memset(mensagem, 0, LIMITE_MENSAGEM * sizeof(char));
+    memset(mensagem_anterior, 0, LIMITE_MENSAGEM * sizeof(char)); 
 
     // Criação do socket do servidor:
     fd_servidor = socket(AF_INET, SOCK_STREAM, 0);
@@ -45,7 +48,7 @@ int main(void) {
         cerr << "Erro na marcação de escuta por clientes!\n";
         exit(-1);
     } else {
-        cout << "Servidor escutando por requisiçõles!\n";
+        cout << "Servidor escutando por requisições!\n";
     }
 
     // Aceite de uma requisição:
@@ -59,13 +62,19 @@ int main(void) {
     } 
     cout << "Cliente conectado no IP: " << inet_ntoa(endereco_cliente.sin_addr) << " e porta " << ntohs(endereco_cliente.sin_port) << endl;
 
-    // Recebimento da mensagem do cliente:
-    if (recv(fd_cliente, mensagem, sizeof(mensagem), 0) == -1) {
-        cerr << "Mensagem não recebida!\n";
-        exit(-1);
+    while(true){
+        // Recebimento da mensagem do cliente:
+        if (recv(fd_cliente, mensagem, sizeof(mensagem), 0) == -1) {
+            cerr << "Mensagem não recebida!\n";
+            exit(-1);
+        }else{
+            if(strcmp(mensagem, mensagem_anterior) != 0 && mensagem[0] != '\0'){
+                cout << "Mensagem recebida de " << inet_ntoa(endereco_cliente.sin_addr) << ": " << mensagem << endl;
+                strcpy(mensagem_anterior, mensagem);
+                memset(mensagem, 0, LIMITE_MENSAGEM * sizeof(char));
+            }else   break;
+        }
     }
-    cout << "Mensagem recebida de " << inet_ntoa(endereco_cliente.sin_addr) << ": " << mensagem << endl;
-
     // Fechamento do socket:
     close(fd_servidor);
 
