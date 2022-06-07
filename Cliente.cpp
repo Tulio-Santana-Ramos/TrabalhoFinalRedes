@@ -8,6 +8,7 @@
 
 using namespace std;
 
+string entrada;
 
 bool conectar_servidor(int fd_cliente, sockaddr_in *endereco_servidor) {
     // Configuração da porta e IP para o mesmo endereço do servidor:
@@ -39,6 +40,10 @@ bool mandar_mensagem_servidor(int fd_cliente, string mensagem_total, char* buffe
     return true;
 }
 
+void ctrlc_handler(int s) {
+    entrada = "/quit";
+}
+
 int main() {
 
     int fd_cliente;
@@ -58,7 +63,8 @@ int main() {
     cout << "Socket criado com sucesso!\nPara conectar-se ao servior, digite /connect\n";
 
     bool shut_down = false;
-    string entrada;
+
+    signal(SIGINT, ctrlc_handler);
 
     while (!shut_down) {
         cout << "Digite sua mensagem ou comando: \n";
@@ -83,8 +89,6 @@ int main() {
             }
         } 
     }
-
-    // Tratar aqui se receber mensagem de resposta do servidor
 
     close(fd_cliente);
     cout << "Socket fechado!\n";
