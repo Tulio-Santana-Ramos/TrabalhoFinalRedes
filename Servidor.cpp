@@ -31,7 +31,7 @@ int main(void) {
     // Configuração do endereço do servidor:
     endereco_servidor.sin_family = AF_INET;
     endereco_servidor.sin_port = htons(2000);
-    endereco_servidor.sin_addr.s_addr = inet_addr("127.0.0.1");
+    endereco_servidor.sin_addr.s_addr = INADDR_ANY;
 
     // Atribuição do endereço ao socket:
     if (bind(fd_servidor, (sockaddr *) &endereco_servidor, sizeof(endereco_servidor)) == -1) {
