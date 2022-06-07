@@ -14,4 +14,4 @@ O projeto foi desenvolvido em sistemas Linux (Ubuntu 22.04 LTS) e Windows 11 em 
 Para fácil compilação dos programas, utiliza-se o [Makefile](https://github.com/Tulio-Santana-Ramos/TrabalhoFinalRedes/blob/main/Makefile) presente neste repositório.
 
 ### Execução
-A execução de ambas as aplicações também fica por parte do [Makefile](https://github.com/Tulio-Santana-Ramos/TrabalhoFinalRedes/blob/main/Makefile) através das respectivas tags de cada uma. Uma vez que ambas as aplicações tenham sido iniciadas e a conexão seja estabelecida, pode-se trocar mensagens de até 4096 caracteres. Mensagens com um número maior de caracteres seram divididas e enviadas em mensagens distintas.
+A execução de ambas as aplicações também fica por parte do [Makefile](https://github.com/Tulio-Santana-Ramos/TrabalhoFinalRedes/blob/main/Makefile) através das respectivas tags de cada uma. Uma vez que ambas as aplicações tenham sido iniciadas e a conexão seja estabelecida, pode-se trocar mensagens de até 4096 caracteres. Mensagens com um número maior de caracteres serão divididas e enviadas em mensagens distintas.
