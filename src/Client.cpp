@@ -7,8 +7,19 @@
 
 using namespace std;
 
-// // Variável auxiliar para tratamento de input
-// string aux_input = "";
+// Função auxiliar para divisão de strings
+string split(string str, char delim){
+    int i = 0, start = 0, end = int(str.size()) - 1;
+
+    while(i++ < int(str.size())){
+        if(str[i] == delim)
+            start = i + 1;
+    }
+    string new_str = "";
+    new_str.append(str, start, end - start + 1);
+
+    return new_str;
+}
 
 // Construtor
 Client::Client(string nick){
@@ -33,6 +44,9 @@ Client::Client(string nick){
         exit(-1);
     }
     cout << "Socket criado com sucesso!\n";
+
+    // Setup da thread
+    Client::self_thread = thread(&Client::thread_logic, this);
 }
 
 // Função para conexão com a aplicação Servidor
@@ -113,18 +127,60 @@ void Client::set_endereco_servidor(sockaddr_in endereco){
     Client::endereco_servidor = endereco;
 }
 
+// Função para setar nickname do Cliente
+void Client::set_nickname(string new_nick){
+    Client::nickname = new_nick;
+}
 
-// // Função para obter endereço cliente
-// void Client::set_address(sockaddr_in end_cliente){
-//     Client::endereco_cliente = end_cliente;
-// }
+// Função para obter nickname do Cliente
+string Client::get_nickname(){
+    return Client::nickname;
+}
 
-// // Função para obter endereço cliente
-// sockaddr_in Client::get_endereco_cliente(void){
-//     return Client::endereco_cliente;
-// }
+// Função para inicialização da thread
+void Client::start_thread(){
+    Client::self_thread.join();
+}
 
-// // Função para setar endereço cliente
-// void Client::(sockaddr_in end_cliente){
-//     Client::endereco_cliente = end_cliente;
-// }
+// Função privada com lógica da thread
+void Client::thread_logic(){
+    string nick = "nickname";
+    sockaddr_in endereco_servidor;
+    char mensagem_servidor[LIMITE_MENSAGEM];
+
+    while (!this->get_shutdown()) {
+
+        cout << "Digite sua mensagem ou comando: \n";
+        getline(cin, entrada);
+
+        if (entrada.length() == 0) {
+            entrada = "/quit";
+        } else if (entrada == "/connect") {
+            // Conexão com o servidor:
+            if(this->conectar_servidor(&endereco_servidor))
+                cout << "Conexão com servidor efetuada com sucesso\n";
+            else
+                cerr << "Erro ao conectar com o servidor!\n";
+        } else {
+            if (entrada == "/quit")
+                this->set_shutdown(true);
+            // Tentativa de envio da mensagem:
+            if (this->mandar_mensagem_servidor(entrada))
+                cout << "Mensagem enviada com sucesso!\n";
+            else
+                cerr << "Erro ao enviar a mensagem!\n";
+            if (entrada == "/ping") {
+                int recv_response = recv(
+                    this->get_fd_cliente(),
+                    mensagem_servidor,
+                    sizeof(mensagem_servidor),
+                    MSG_NOSIGNAL
+                );
+                if (recv_response != -1)
+                    cout << "Servidor respondeu: " << mensagem_servidor << "\n";
+            }
+            if(entrada.find(nick) != string::npos)
+                this->set_nickname(split(entrada, ' '));
+        } 
+    }
+}

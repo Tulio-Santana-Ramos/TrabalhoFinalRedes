@@ -4,6 +4,7 @@
 // Definição do limite de tamanho das mensagens trocadas entre Servidor e Cliente
 #define LIMITE_MENSAGEM 4097
 
+#include <thread>
 #include <pthread.h>
 #include <iostream>
 #include <unistd.h>
@@ -39,6 +40,12 @@ class Client{
 
         // Se pode ou não enviar mensagens
         bool muted;
+
+        // Thread do cliente
+        thread self_thread;
+
+        // Controller
+        void thread_logic();
 
     public:
         // Endereço do Cliente
@@ -76,6 +83,14 @@ class Client{
 
         // Set endereco_servidor
         void set_endereco_servidor(sockaddr_in endereco);
+
+        // Set nickname
+        void set_nickname(string new_nick);
+
+        string get_nickname();
+
+        // Inicializa thread
+        void start_thread();
 
         // TODO: Criação e inicialização da thread
         // TODO: Adaptação do loop while presente em Cliente.cpp em Oldfiles
