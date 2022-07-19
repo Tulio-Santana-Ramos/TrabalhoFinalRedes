@@ -1,7 +1,7 @@
 #ifndef _CHANNEL_H_
 #define _CHANNEL_H_
 
-#include <thread>
+#include <pthread.h>
 #include <iostream>
 #include <unistd.h>
 #include <arpa/inet.h>

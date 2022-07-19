@@ -4,12 +4,14 @@
 // Definição do limite de tamanho das mensagens trocadas entre Servidor e Cliente
 #define LIMITE_MENSAGEM 4097
 
-#include <thread>
+#include <pthread.h>
 #include <iostream>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <bits/stdc++.h>
+
+using namespace std;
 
 // Classe do Servidor da aplicação
 class Client{
@@ -22,9 +24,6 @@ class Client{
 
         // Endereço do Servidor
         sockaddr_in endereco_servidor;
-
-        // Endereço do Servidor
-        sockaddr_in endereco_cliente;
 
         // Entrada do Cliente
         string entrada;
@@ -42,20 +41,41 @@ class Client{
         bool muted;
 
     public:
+        // Endereço do Cliente
+        sockaddr_in endereco_cliente;
+
         // Construtor
         Client(string nick);
 
         // Conexão com servidor
-        bool conectar_servidor(int fd_cliente, sockaddr_in *endereco_servidor);
+        bool conectar_servidor(sockaddr_in *endereco_servidor);
 
         // Envio de mansagens
-        bool mandar_mensagem_servidor(int fd_cliente, string mensagem_total, char* buffer_mensagem);
+        bool mandar_mensagem_servidor(string mensagem_total);
 
-        // Set fd_client
-        void set_fd(int fd_cliente);
+        // Limpeza do buffer mensagem_cliente:
+        void limpar_buffer();
 
-        // Set endereço_cliente
-        void set_address(sockaddr_in end_cliente);
+        // Get fd_cliente
+        int get_fd_cliente(void);
+
+        // Set fd_cliente
+        void set_fd_cliente(int fd_cliente);
+
+        // Get shutdown
+        bool get_shutdown(void);
+
+        // Set shutdown
+        void set_shutdown(bool shutdown);
+
+        // Get mensagem
+        char* get_mensagem();
+
+        // Get endereco_servidor
+        sockaddr_in get_endereco_servidor(void);
+
+        // Set endereco_servidor
+        void set_endereco_servidor(sockaddr_in endereco);
 
         // TODO: Criação e inicialização da thread
         // TODO: Adaptação do loop while presente em Cliente.cpp em Oldfiles

@@ -1,4 +1,4 @@
-#include <thread>
+#include <pthread.h>
 #include <iostream>
 #include <unistd.h>
 #include <arpa/inet.h>
@@ -43,4 +43,34 @@ Server::Server(){
     }else{
         cout << "Servidor escutando por requisições!\n";
     }
+}
+
+// Função para obter socket servidor
+int Server::get_fd_servidor(void){
+    return Server::fd_servidor;
+}
+
+// Função para setar socket servidor
+void Server::set_fd_servidor(int fd){
+    Server::fd_servidor = fd;
+}
+
+// Função para obter shutdown
+bool Server::get_shutdown(void){
+    return Server::shutdown;
+}
+
+// Função para setar shutdown
+void Server::set_shutdown(bool shutdown){
+    Server::shutdown = shutdown;
+}
+
+// Função para obter mensagem:
+char* Server::get_mensagem(void){
+    return Server::mensagem_servidor;
+}
+
+// Função para setar mensagem:
+void Server::set_mensagem(char* mensagem){
+    strcpy(Server::mensagem_servidor, mensagem);
 }
