@@ -44,7 +44,8 @@ int main(){
             int recv_response = recv (
                 curr_client->get_fd_cliente(),
                 curr_client->get_mensagem(),
-                LIMITE_MENSAGEM, 0
+                LIMITE_MENSAGEM,
+                MSG_NOSIGNAL
             );
 
             if (recv_response == -1) {
@@ -69,7 +70,8 @@ int main(){
                 send(
                     curr_client->get_fd_cliente(),
                     server->get_mensagem(),
-                    strlen(server->get_mensagem()) + 1, 0
+                    strlen(server->get_mensagem()) + 1,
+                    MSG_NOSIGNAL
                 );
                 break;
             } 
