@@ -7,13 +7,8 @@
 
 using namespace std;
 
-// Variável auxiliar para tratamento de input
-string aux_input = "";
-
-// Função auxiliar para fechar aplicação através do CTRL + C
-void ctrlc_handler(int s) {
-    aux_input = "/quit";
-}
+// // Variável auxiliar para tratamento de input
+// string aux_input = "";
 
 // Construtor
 Client::Client(string nick){
@@ -38,9 +33,6 @@ Client::Client(string nick){
         exit(-1);
     }
     cout << "Socket criado com sucesso!\n";
-
-    // Definição de ação para tratar SIGINT
-    signal(SIGINT, ctrlc_handler);
 }
 
 // Função para conexão com a aplicação Servidor
