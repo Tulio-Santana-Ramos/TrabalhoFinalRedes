@@ -44,7 +44,7 @@ int main(){
             int recv_response = recv (
                 curr_client->get_fd_cliente(),
                 curr_client->get_mensagem(),
-                sizeof(curr_client->get_mensagem()), 0
+                LIMITE_MENSAGEM, 0
             );
 
             if (recv_response == -1) {

@@ -56,9 +56,9 @@ bool Client::mandar_mensagem_servidor(string mensagem_total){
 
     // Envio da mensagem em blocos de no máximo LIMITE_MENSAGEM:
     int j = 0;
-    for (uint i = 0; i < mensagem_total.size(); i++) {
+    for (uint i = 0; i < mensagem_total.length(); i++) {
         Client::mensagem_cliente[j++] = mensagem_total[i];
-        if (i == mensagem_total.size() - 1 || j == LIMITE_MENSAGEM - 1) {
+        if (i == mensagem_total.length() - 1 || j == LIMITE_MENSAGEM - 1) {
             Client::mensagem_cliente[j] = '\0';
             // Envia um bloco da mensagem ao servidor:
             if (send(Client::fd_cliente, Client::mensagem_cliente, strlen(Client::mensagem_cliente) + 1, MSG_NOSIGNAL) == -1)
