@@ -22,7 +22,7 @@ class Server{
         int fd_servidor;
 
         // Vetor de clientes conectados
-        vector <Client> clientes;
+        vector < pair <Client *, thread > > clientes;
 
         // Vetor de canais disponíveis
         vector <Channel> canais;
@@ -33,6 +33,26 @@ class Server{
         // Buffer para mensagens
         char mensagem_servidor[LIMITE_MENSAGEM];
 
+        // Fila de mensagens
+        queue < pair <Client *, string> > messages_queue;
+
+        // Thread principal servidor
+        thread self_thread;
+
+        // Thread auxiliar para verificar novas conexões
+        thread new_connection_thread;
+
+        // Main Controller
+        void self_thread_logic();
+
+        // Controller de conexão de novos clientes
+        void connection_waiter_logic(Client *curr_client, int &res);
+
+        // Inicializa thread de conexão
+        void start_connection_waiter();
+
+        // Controller da lógica de troca de mensagens
+        void exchange_logic(Client *curr_client);
     public:
         // Tamanho do endereço utilizado pelos clientes
         socklen_t tamanho_endereco;
@@ -57,6 +77,9 @@ class Server{
 
         // Set mensagem
         void set_mensagem(char *mensagem);
+
+        // Inicializa thread principal
+        void start_thread();
 
     // TODO: Adaptação do loop while presente em Servidor.cpp em Oldfiles
 };
