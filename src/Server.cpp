@@ -11,6 +11,7 @@ using namespace std;
 Server::Server(){
     // Inicialização de variável de controle de estado do servidor
     Server::shutdown = false;
+    Server::tamanho_endereco = sizeof(Server::endereco_servidor);
 
     // Criação do socket
     Server::fd_servidor = socket(AF_INET, SOCK_STREAM, 0);
