@@ -8,6 +8,9 @@
 
 using namespace std;
 
+int opt = 1, sd, aux, use;
+fd_set readfds;
+
 Server::Server(){
     // Inicialização de variável de controle de estado do servidor
     Server::shutdown = false;
@@ -22,6 +25,11 @@ Server::Server(){
         exit(-1);
     }
     cout << "Socket criado com sucesso!\n";
+
+    if(setsockopt(Server::fd_servidor, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0){
+        cerr << "Erro no set socket option" << endl;
+        exit(-1);
+    }
 
     // Configuração do endereço do servidor:
     Server::endereco_servidor.sin_family = AF_INET;
@@ -90,6 +98,24 @@ void Server::self_thread_logic(){
     int ids = 0;
 
     while(!Server::get_shutdown()){
+        FD_ZERO(&readfds);
+        FD_SET(Server::fd_servidor, &readfds);
+        aux = Server::fd_servidor;
+
+        for(uint i = 0; i < Server::clientes.size(); i++){
+            sd = Server::clientes[i].first->get_fd_cliente();
+            if(sd > 0)
+                FD_SET(sd, &readfds);
+            if(sd > aux)
+                aux = sd;
+        }
+
+        use = select(aux + 1, &readfds, NULL, NULL, NULL);
+        if((use < 0) && errno !=  EINTR){
+            cout << "select error" << endl;
+            exit(-1);
+        }
+
         // Declaração de promise para averiguar novas conexões
         int res = 0;
 
@@ -97,11 +123,14 @@ void Server::self_thread_logic(){
         Client *curr_client = new Client("");
         curr_client->set_id(ids);
 
-        // Setup da thread de comunicação
-        Server::new_connection_thread = thread(&Server::connection_waiter_logic, this, curr_client, ref(res));
+        if(FD_ISSET(Server::fd_servidor, &readfds)){
+            // Setup da thread de comunicação
+            Server::new_connection_thread = thread(&Server::connection_waiter_logic, this, curr_client, ref(res));
 
-        // Inicialização da thread de comunicação
-        Server::start_connection_waiter();
+            // Inicialização da thread de comunicação
+            Server::start_connection_waiter();
+        }
+        
 
         // Com base no retorno da promise
         if(res){
@@ -112,7 +141,7 @@ void Server::self_thread_logic(){
             Server::clientes.push_back(make_pair(curr_client, move(comunicacao)));
 
             // Inicialização da thread
-            Server::clientes[int(Server::clientes.size()) - 1].second.join();
+            //Server::clientes[int(Server::clientes.size()) - 1].second.join();
 
             // Atualização dos ids
             ids++;
@@ -120,6 +149,12 @@ void Server::self_thread_logic(){
             for(uint i = 0; i < Server::clientes.size(); i++){
                 cout << Server::clientes[i].first->endereco_cliente.sin_port << endl;
             }
+        }
+
+        for(uint i = 0; i < Server::clientes.size(); i++){
+            sd = Server::clientes[i].first->get_fd_cliente();
+            if(FD_ISSET(sd, &readfds))
+                Server::clientes[i].second.join();
         }
             
     }
@@ -173,19 +208,24 @@ void Server::exchange_logic(Client *curr_client){
         }
 
         char* mensagem = curr_client->get_mensagem();
-        string str(curr_client->get_mensagem());
+        //string str(curr_client->get_mensagem());
         // Alocamento da mensagem e cliente remetente na fila
-        Server::messages_queue.push(make_pair(curr_client, str));
+        //Server::messages_queue.push(make_pair(curr_client, str));
 
         if (strlen(mensagem) == 0)
             break;
 
         if (strcmp(mensagem, "/quit") == 0) {
             //this->set_shutdown(true);
+            vector <pair <Client *, thread>>::iterator it;
+            for(it = Server::clientes.begin(); it != Server::clientes.end(); it++){
+                if(it->first->get_fd_cliente() == curr_client->get_fd_cliente())
+                    Server::clientes.erase(it);
+            }
             break;
         }
 
-        /*if (strcmp(mensagem, "/ping") == 0) {
+        if (strcmp(mensagem, "/ping") == 0) {
             cout << "Ping recebido\n";
             char pong[6] = {'P', 'o', 'n', 'g', '!', '\0'};
             this->set_mensagem(pong);
@@ -198,11 +238,11 @@ void Server::exchange_logic(Client *curr_client){
             break;
         }
 
-        cout << mensagem << "\n";*/
-        if(!Server::messages_queue.empty()){
+        cout << mensagem << "\n";
+        /*if(!Server::messages_queue.empty()){
             cout << "Nova mensagem de " << Server::messages_queue.front().first->get_nickname() << ":" << endl;
             cout << Server::messages_queue.front().second << endl;
             Server::messages_queue.pop();
-        }
+        }*/
     }
 }

@@ -34,9 +34,11 @@ int main(){
     // Obtenção do input
     getline(cin, entrada);
 
-    // Inicialização da thread
-    client->start_thread();
-    
+    while(!client->get_shutdown()){
+        // Inicialização da thread
+        client->start_thread();
+    }
+
     close(client->get_fd_cliente());
     cout << "Socket fechado!\n";
 
