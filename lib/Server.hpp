@@ -22,7 +22,7 @@ class Server{
         int fd_servidor;
 
         // Vetor de clientes conectados
-        vector < pair <Client *, thread > > clientes;
+        vector <Client *> clientes;
 
         // Vetor de canais disponíveis
         vector <Channel> canais;
@@ -52,7 +52,7 @@ class Server{
         void start_connection_waiter();
 
         // Controller da lógica de troca de mensagens
-        void exchange_logic(Client *curr_client);
+        //void exchange_logic(Client *curr_client);
     public:
         // Tamanho do endereço utilizado pelos clientes
         socklen_t tamanho_endereco;

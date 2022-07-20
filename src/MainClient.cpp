@@ -39,7 +39,7 @@ int main(){
         client->start_thread();
     }
 
-    close(client->get_fd_cliente());
+    //close(client->get_fd_cliente());
     cout << "Socket fechado!\n";
 
     return 0;

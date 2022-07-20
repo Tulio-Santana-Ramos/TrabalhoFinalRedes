@@ -23,9 +23,6 @@ class Client{
         // Variável para criação do socket
         int fd_cliente;
 
-        // Identificação do cliente no servidor
-        int id;
-
         // Endereço do Servidor
         sockaddr_in endereco_servidor;
 
@@ -71,9 +68,6 @@ class Client{
 
         // Set fd_cliente
         void set_fd_cliente(int fd_cliente);
-
-        // Set id
-        void set_id(int id);
 
         // Get shutdown
         bool get_shutdown(void);

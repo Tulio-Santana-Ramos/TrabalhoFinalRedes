@@ -103,7 +103,7 @@ void Server::self_thread_logic(){
         aux = Server::fd_servidor;
 
         for(uint i = 0; i < Server::clientes.size(); i++){
-            sd = Server::clientes[i].first->get_fd_cliente();
+            sd = Server::clientes[i]->get_fd_cliente();
             if(sd > 0)
                 FD_SET(sd, &readfds);
             if(sd > aux)
@@ -121,7 +121,6 @@ void Server::self_thread_logic(){
 
         // Inicialização da variável que conterá o cliente atual (apenas temporário para teste):
         Client *curr_client = new Client("");
-        curr_client->set_id(ids);
 
         if(FD_ISSET(Server::fd_servidor, &readfds)){
             // Setup da thread de comunicação
@@ -135,26 +134,70 @@ void Server::self_thread_logic(){
         // Com base no retorno da promise
         if(res){
             // Criação e setup de thread de troca de mensagens entre curr_client e servidor
-            thread comunicacao = thread(&Server::exchange_logic, this, curr_client);
+            //thread comunicacao = thread(&Server::exchange_logic, this, curr_client);
 
             // Inclusão de novo usuário conectado e sua thread
-            Server::clientes.push_back(make_pair(curr_client, move(comunicacao)));
+            Server::clientes.push_back(curr_client);
 
             // Inicialização da thread
             //Server::clientes[int(Server::clientes.size()) - 1].second.join();
 
-            // Atualização dos ids
-            ids++;
-            cout << "Porta dos conectados: \n";
-            for(uint i = 0; i < Server::clientes.size(); i++){
-                cout << Server::clientes[i].first->endereco_cliente.sin_port << endl;
-            }
         }
 
         for(uint i = 0; i < Server::clientes.size(); i++){
-            sd = Server::clientes[i].first->get_fd_cliente();
-            if(FD_ISSET(sd, &readfds))
-                Server::clientes[i].second.join();
+            sd = Server::clientes[i]->get_fd_cliente();
+            if(FD_ISSET(sd, &readfds)){
+                //Server::clientes[i].second.join();
+                Server::clientes[i]->limpar_buffer();
+
+                // Recebimento de 1 bloco da mensagem do cliente:
+                int recv_response = recv (
+                    Server::clientes[i]->get_fd_cliente(),
+                    Server::clientes[i]->get_mensagem(),
+                    LIMITE_MENSAGEM,
+                    MSG_NOSIGNAL
+                );
+
+                if (recv_response == -1) {
+                    cout << "Mensagem não recebida!\n";
+                    exit(-1);
+                }
+
+                char* mensagem = Server::clientes[i]->get_mensagem();
+                //string str(curr_client->get_mensagem());
+                // Alocamento da mensagem e cliente remetente na fila
+                //Server::messages_queue.push(make_pair(curr_client, str));
+
+                //if (strlen(mensagem) == 0)
+                    //break;
+
+                if (strcmp(mensagem, "/quit") == 0) {
+                    //this->set_shutdown(true);
+                    vector <Client *>::iterator it;
+                    for(it = Server::clientes.begin(); it != Server::clientes.end(); it++){
+                        if((*it)->get_fd_cliente() == Server::clientes[i]->get_fd_cliente()){
+                            close((*it)->get_fd_cliente());
+                            Server::clientes.erase(it);
+                        }
+                    }
+                    //break;
+                }
+
+                if (strcmp(mensagem, "/ping") == 0) {
+                    cout << "Ping recebido\n";
+                    char pong[6] = {'P', 'o', 'n', 'g', '!', '\0'};
+                    this->set_mensagem(pong);
+                    send(
+                        Server::clientes[i]->get_fd_cliente(),
+                        this->get_mensagem(),
+                        strlen(this->get_mensagem()) + 1,
+                        MSG_NOSIGNAL
+                    );
+                    //break;
+                }
+
+                cout << mensagem << "\n";
+            }
         }
             
     }
@@ -189,7 +232,7 @@ void Server::connection_waiter_logic(Client *curr_client, int &res){
 }
 
 // Função privada com lógica para troca de mensagens
-void Server::exchange_logic(Client *curr_client){
+/*void Server::exchange_logic(Client *curr_client){
     // Recepção da(s) mensagem(s) do cliente (pois podem ser quebradas se forem maiores que LIMITE_MENSAGEM):
     while (true) {
         curr_client->limpar_buffer();
@@ -239,10 +282,10 @@ void Server::exchange_logic(Client *curr_client){
         }
 
         cout << mensagem << "\n";
-        /*if(!Server::messages_queue.empty()){
+        if(!Server::messages_queue.empty()){
             cout << "Nova mensagem de " << Server::messages_queue.front().first->get_nickname() << ":" << endl;
             cout << Server::messages_queue.front().second << endl;
             Server::messages_queue.pop();
-        }*/
+        }
     }
-}
+}*/

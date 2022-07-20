@@ -103,11 +103,6 @@ void Client::set_fd_cliente(int fd_cliente){
     Client::fd_cliente = fd_cliente;
 }
 
-// Função para setar id cliente
-void Client::set_id(int id){
-    Client::id = id;
-}
-
 // Função para obter shutdown
 bool Client::get_shutdown(void){
     return Client::shutdown;
