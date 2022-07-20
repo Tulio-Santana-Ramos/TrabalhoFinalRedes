@@ -47,6 +47,12 @@ class Client{
         // Controller
         void thread_logic();
 
+        // Input thread
+        void recv_thread();
+
+        // Output thread
+        void send_thread();
+
     public:
         // Endereço do Cliente
         sockaddr_in endereco_cliente;
@@ -91,9 +97,6 @@ class Client{
 
         // Inicializa thread
         void start_thread();
-
-        // TODO: Criação e inicialização da thread
-        // TODO: Adaptação do loop while presente em Cliente.cpp em Oldfiles
 };
 
 #endif /*_CLIENT_H_*/

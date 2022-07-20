@@ -142,45 +142,63 @@ void Client::start_thread(){
     Client::self_thread.join();
 }
 
-// Função privada com lógica da thread
+// Função privada com lógica da thread principal
 void Client::thread_logic(){
-    string nick = "nickname";
-    sockaddr_in endereco_servidor;
-    char mensagem_servidor[LIMITE_MENSAGEM];
+
+    entrada = "";
+
+    while (entrada != "/connect") {
+        cout << "Digite /connect para conectar-se ao servidor!\n";
+        cin >> entrada; getchar();
+    }
+
+    if(this->conectar_servidor(&endereco_servidor))
+        cout << "Conexão com servidor efetuada com sucesso\n";
+    else {
+        cerr << "Erro ao conectar com o servidor!\n";
+        return;
+    }
+    
+    thread input_thread = thread(&Client::recv_thread, this);
+    thread output_thread = thread(&Client::send_thread, this);
 
     while (!this->get_shutdown()) {
+        if (entrada == "/quit")
+            this->set_shutdown(true);
+    }
 
+    input_thread.detach();
+    output_thread.detach();
+}
+
+// Função privada com a lógica da thread de recepção de mensagens
+void Client::recv_thread(){
+    while (true) {
+        char mensagem_servidor[LIMITE_MENSAGEM];
+        int recv_response = recv(
+            this->get_fd_cliente(),
+            mensagem_servidor,
+            sizeof(mensagem_servidor),
+            MSG_NOSIGNAL
+        );
+        if (recv_response != -1)
+            cout << "Servidor respondeu: " << mensagem_servidor << "\n";
+    }
+}
+
+// Função privada com a lógica da thread de envio de mensagens
+void Client::send_thread(){
+    string nick = "nickname";
+    while (true) {
         cout << "Digite sua mensagem ou comando: \n";
-        getline(cin, entrada);
-
-        if (entrada.length() == 0) {
-            entrada = "/quit";
-        } else if (entrada == "/connect") {
-            // Conexão com o servidor:
-            if(this->conectar_servidor(&endereco_servidor))
-                cout << "Conexão com servidor efetuada com sucesso\n";
-            else
-                cerr << "Erro ao conectar com o servidor!\n";
-        } else {
-            if (entrada == "/quit")
-                this->set_shutdown(true);
-            // Tentativa de envio da mensagem:
-            if (this->mandar_mensagem_servidor(entrada))
-                cout << "Mensagem enviada com sucesso!\n";
-            else
-                cerr << "Erro ao enviar a mensagem!\n";
-            if (entrada == "/ping") {
-                int recv_response = recv(
-                    this->get_fd_cliente(),
-                    mensagem_servidor,
-                    sizeof(mensagem_servidor),
-                    MSG_NOSIGNAL
-                );
-                if (recv_response != -1)
-                    cout << "Servidor respondeu: " << mensagem_servidor << "\n";
-            }
-            if(entrada.find(nick) != string::npos)
-                this->set_nickname(split(entrada, ' '));
-        } 
+        getline(cin, Client::entrada);
+        if (Client::entrada == "/quit")
+            return;
+        if(entrada.find(nick) != string::npos)
+            this->set_nickname(split(entrada, ' '));
+        if (this->mandar_mensagem_servidor(Client::entrada))
+            cout << "Mensagem enviada com sucesso!\n";
+        else
+            cerr << "Erro ao enviar a mensagem!\n";
     }
 }
