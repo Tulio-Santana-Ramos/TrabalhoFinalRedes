@@ -19,8 +19,7 @@ int main(){
     // Fechamento do socket:
     close(server->get_fd_servidor());
     cout << "Socket fechado!\n";
+    delete server;
 
     return 0;
-
 }
-    

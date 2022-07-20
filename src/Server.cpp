@@ -94,8 +94,6 @@ void Server::start_thread(){
 
 // Função privada com lógica da thread principal
 void Server::self_thread_logic(){
-    // Ids recebidos pelos usuários, atualizado a cada nova entrada no sistema
-    int ids = 0;
 
     while(!Server::get_shutdown()){
         FD_ZERO(&readfds);
@@ -175,10 +173,9 @@ void Server::self_thread_logic(){
                     //this->set_shutdown(true);
                     vector <Client *>::iterator it;
                     for(it = Server::clientes.begin(); it != Server::clientes.end(); it++){
-                        if((*it)->get_fd_cliente() == Server::clientes[i]->get_fd_cliente()){
-                            close((*it)->get_fd_cliente());
-                            Server::clientes.erase(it);
-                        }
+                        if((*it)->get_fd_cliente() == Server::clientes[i]->get_fd_cliente())
+                            //Server::clientes.erase(it);
+                            (*it)->set_fd_cliente(0);
                     }
                     //break;
                 }
