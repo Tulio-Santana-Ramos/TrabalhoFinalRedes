@@ -7,6 +7,11 @@
 
 using namespace std;
 
+// Função auxiliar para fechar aplicação através do CTRL + C
+void Client::ctrlc_handler(int s) {
+    Client::entrada = "/quit";
+}
+
 // Função auxiliar para divisão de strings
 string split(string str, char delim){
     int i = 0, start = 0, end = int(str.size()) - 1;
@@ -35,18 +40,8 @@ Client::Client(string nick){
     // Inicialização da variável de controle de estado do cliente
     Client::shutdown = false;
 
-    // Criação do socket do Cliente
-    Client::fd_cliente = socket(AF_INET, SOCK_STREAM, 0);
-
-    // Verificação se o socket foi criado
-    if(Client::fd_cliente == -1){
-        cerr << "Erro ao criar o socket!\n";
-        exit(-1);
-    }
-    cout << "Socket criado com sucesso!\n";
-
-    // Setup da thread
-    Client::self_thread = thread(&Client::thread_logic, this);
+    // Inicialização do fd do cliente:
+    Client::fd_cliente = -1;
 }
 
 // Função para conexão com a aplicação Servidor
@@ -132,6 +127,11 @@ void Client::set_nickname(string new_nick){
     Client::nickname = new_nick;
 }
 
+// Função para setar entrada do Cliente
+void Client::set_entrada(string entrada){
+    Client::entrada = entrada;
+}
+
 // Função para obter nickname do Cliente
 string Client::get_nickname(){
     return Client::nickname;
@@ -139,6 +139,22 @@ string Client::get_nickname(){
 
 // Função para inicialização da thread
 void Client::start_thread(){
+    // Criação do socket do Cliente
+    Client::fd_cliente = socket(AF_INET, SOCK_STREAM, 0);
+
+    // Verificação se o socket foi criado
+    if(Client::fd_cliente == -1){
+        cerr << "Erro ao criar o socket!\n";
+        exit(-1);
+    }
+    cout << "Socket criado com sucesso!\n";
+
+    // Setup da thread
+    Client::self_thread = thread(&Client::thread_logic, this);
+}
+
+// Função para finalização da thread
+void Client::join_thread(){
     Client::self_thread.join();
 }
 
@@ -165,6 +181,7 @@ void Client::thread_logic(){
     while (!this->get_shutdown()) {
         if (entrada == "/quit")
             this->set_shutdown(true);
+        sleep(1);
     }
 
     input_thread.detach();

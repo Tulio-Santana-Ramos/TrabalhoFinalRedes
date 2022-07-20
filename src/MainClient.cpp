@@ -7,11 +7,14 @@
 
 using namespace std;
 
-string entrada;
+Client *client = NULL;
 
 // Função auxiliar para fechar aplicação através do CTRL + C
 void ctrlc_handler(int s) {
-    entrada = "/quit";
+    if (client != NULL)
+        client->set_entrada("/quit");
+    else
+        exit(1);
 }
 
 int main(){
@@ -22,23 +25,22 @@ int main(){
     cin >> nick;
 
     // Criação do cliente:
-    Client *client = new Client(nick);
-
-    // Inicialização de variáveis auxiliares:
-    //sockaddr_in endereco_servidor;
-    //char mensagem_servidor[LIMITE_MENSAGEM];
+    client = new Client(nick);
 
     // Definição de ação para tratar SIGINT
     signal(SIGINT, ctrlc_handler);
 
-    // Obtenção do input
+    // Limpeza do buffer do teclado (\n):
+    string entrada;
     getline(cin, entrada);
 
-    while(!client->get_shutdown()){
-        // Inicialização da thread
-        client->start_thread();
-    }
+    // Inicialização da thread
+    client->start_thread();
 
+    // Finalização da thread
+    client->join_thread();
+
+    // Fechamento do socket do cliente:
     close(client->get_fd_cliente());
     cout << "Socket fechado!\n";
     delete client;

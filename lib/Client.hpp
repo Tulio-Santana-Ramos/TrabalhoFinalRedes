@@ -14,7 +14,7 @@
 
 using namespace std;
 
-// Classe do Servidor da aplicação
+// Classe do Cliente da aplicação
 class Client{
     private:
         // Variável de controle
@@ -93,10 +93,20 @@ class Client{
         // Set nickname
         void set_nickname(string new_nick);
 
+        // Set entrada
+        void set_entrada(string entrada);
+
+        // Get nickname
         string get_nickname();
 
         // Inicializa thread
         void start_thread();
+
+        // Finaliza thread
+        void join_thread();
+
+        // CTRL C callback handler:
+        void ctrlc_handler(int s);
 };
 
 #endif /*_CLIENT_H_*/
