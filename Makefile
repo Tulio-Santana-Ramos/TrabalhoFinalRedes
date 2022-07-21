@@ -1,16 +1,15 @@
-# Este novo makefile ainda precisa de muitas alterações
 .PHONY : client server all srun crun clean
 
 all: client server
 
-client:	lib/Client.hpp
+client:
 	g++ -g -c Cliente.cpp
-	g++ -g -o ClientSide Cliente.o -Wall -Werror
+	g++ -g -o ClientSide Cliente.o -Wall -Werror -pthread -lpthread
 	rm Cliente.o
 
-server: lib/Server.hpp
+server:
 	g++ -g -c Servidor.cpp
-	g++ -g -o ServerSide Servidor.o -Wall -Werror
+	g++ -g -o ServerSide Servidor.o -Wall -Werror -pthread -lpthread
 	rm Servidor.o
 
 srun:
@@ -22,6 +21,3 @@ crun:
 clean:
 	rm ServerSide
 	rm ClientSide
-
-zip: clean
-	zip -r TrabalhoFinalRedes.zip Makefile lib/* src/*

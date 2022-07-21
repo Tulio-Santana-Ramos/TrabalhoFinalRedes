@@ -1,5 +1,9 @@
 {
-    "files.associations": {
-        "iostream": "cpp"
-    }
+  "files.associations": {
+    "*.html": "html",
+    "iostream": "cpp",
+    "tuple": "cpp",
+    "thread": "cpp",
+    "*.tcc": "cpp"
+  }
 }
