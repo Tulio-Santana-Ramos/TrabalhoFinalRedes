@@ -4,10 +4,12 @@
 #include <arpa/inet.h>
 #include <bits/stdc++.h>
 
-#define LIMITE_MENSAGEM 4097
-#define MAX_CLIENTS 10
+#define LIMITE_MENSAGEM 4097    // Limite do tamanho de mensagem
+#define MAX_CLIENTS 100         // Número máximo de conexões suportadas
 
 using namespace std;
+
+// Struct representando o Cliente da aplicação
 struct Client{
     struct sockaddr_in address;
     int fd_cliente;
@@ -15,29 +17,26 @@ struct Client{
     bool adm;
     bool muted;
     bool shutdown;
-    pthread_t thread;
 };
 
+// Struct representando os Canais da aplicação
 struct Channel{
     string name;
     int fd_admin;
     vector <Client *> usuarios;
 };
 
+// Vetor de clientes associados ao servidor
 vector <Client *> conectados;
-vector <Channel *> canais;
-pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t channels_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-void str_trim_lf (char* arr, int length) {
-  int i;
-  for (i = 0; i < length; i++) { // trim \n
-    if (arr[i] == '\n') {
-      arr[i] = '\0';
-      break;
-    }
-  }
-}
+// Vetor de canais associados ao servidor
+vector <Channel *> canais;
+
+// Mutex para sincronização de operações de clientes
+pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+// Mutex para sincronização de operações de canais
+pthread_mutex_t channels_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // Função auxiliar para divisão de strings
 string split(char str[], char delim){
@@ -52,19 +51,21 @@ string split(char str[], char delim){
     return new_str;
 }
 
+// Função auxiliar para converter char* para string
 string convert_char_to_string(char str[]){
     string new_string(str);
     return new_string;
 }
 
+// Função auxiliar para converter string para char*
 char *convert_string_to_char(string str) {
-    // char new_string [str.length() + 1];
     char *new_string = (char *) calloc(str.length() + 1, 1);
     strcpy(new_string, str.c_str());
     return new_string;
 }
 
-void queue_remove(int fd){
+// Função auxiliar para remover clientes conectados ao servidor
+void server_client_remove(int fd){
     pthread_mutex_lock(&clients_mutex);
 
     for(uint i = 0; i < conectados.size(); i++){
@@ -76,6 +77,7 @@ void queue_remove(int fd){
     pthread_mutex_unlock(&clients_mutex);
 }
 
+// Função auxiliar para remoção de canais
 void channel_remove(string channel_name) {
     pthread_mutex_lock(&channels_mutex);
 
@@ -88,21 +90,20 @@ void channel_remove(string channel_name) {
     pthread_mutex_unlock(&channels_mutex);
 }
 
+// Função auxiliar para remoção de clientes de canais
 void user_remove(Channel *canal, int fd_cliente) {
     pthread_mutex_lock(&channels_mutex);
 
     for(uint i = 0; i < canal->usuarios.size(); i++){
         if(canal->usuarios[i]->fd_cliente == fd_cliente){
-            // pthread_detach(canal->usuarios[i]->thread);
-            // canal->usuarios[i] = NULL;
             canal->usuarios.erase(canal->usuarios.begin() + i);
-            cout << "achou\n";
             break;
         }
     }
     pthread_mutex_unlock(&channels_mutex);
 }
 
+// Função auxiliar para obter fd de usuário através de seu nickname
 int get_user_fd_by_nickname(Channel *canal, string nickname) {
     for (auto user : canal->usuarios) {
         if (user->nickname == nickname)
@@ -111,20 +112,23 @@ int get_user_fd_by_nickname(Channel *canal, string nickname) {
     return -1;
 }
 
-// void send_message(char mensagem[], int fd){
-//     pthread_mutex_lock(&clients_mutex);
+// Função auxiliar para mutar usuário a partir de seu fd
+void mute_user(Channel *canal, int fd){
+    for(auto user : canal->usuarios){
+        if(user->fd_cliente == fd)
+            user->muted = true;
+    }
+}
 
-//     for(uint i = 0; i < conectados.size(); i++){
-//         if(conectados[i]->fd_cliente != fd){
-//             if(write(conectados[i]->fd_cliente, mensagem, strlen(mensagem)) < 0){
-//                 perror("Erro no wirte");
-//                 break;
-//             }
-//         }
-//     }
-//     pthread_mutex_unlock(&clients_mutex);
-// }
+// Função auxiliar para desmutar usuário a partir de seu fd
+void unmute_user(Channel *canal, int fd){
+    for(auto user : canal->usuarios){
+        if(user->fd_cliente == fd)
+            user->muted = false;
+    }
+}
 
+// Função auxiliar para broadcast em determinado canal
 void send_message(char mensagem[], int fd, Channel* canal){
     pthread_mutex_lock(&clients_mutex);
 
@@ -133,7 +137,7 @@ void send_message(char mensagem[], int fd, Channel* canal){
     for(auto cliente : canal->usuarios){
         if(cliente->fd_cliente != fd){
             if(write(cliente->fd_cliente, mensagem, strlen(mensagem)) < 0){
-                perror("Erro no wirte");
+                perror("Erro no write\n");
                 break;
             }
         }
@@ -141,34 +145,42 @@ void send_message(char mensagem[], int fd, Channel* canal){
     pthread_mutex_unlock(&clients_mutex);
 }
 
+// Lógica da thread principal de comunicação Servidor e Cliente
 void *handle_client(void *arg){
     char mensagem[LIMITE_MENSAGEM];
     char name[50];
     char channel[50];
     int leave_flag = 0;
 
+    // Inicialização de possíveis novos clientes e canais
     Client *cliente = (Client *)arg;
     Channel *canal_atual = NULL;
 
+    // Recepção do nickname inicial do usuário
     if(recv(cliente->fd_cliente, name, 50, 0) <= 0 || strlen(name) < 2 || strlen(name) >= 50 - 1){
-        printf("N inseriu nome");
+        printf("Não inseriu nome\n");
         leave_flag = 1;
     } else {
         stpcpy(cliente->nickname, name);
     }
     bzero(mensagem, LIMITE_MENSAGEM);
 
+    // Recepção do canal em que o usuário irá se conectar
     if(recv(cliente->fd_cliente, channel, 50, 0) <= 0 || strlen(channel) < 2 || strlen(channel) >= 50 - 1){
-        printf("N inseriu canal");
+        printf("Não inseriu canal\n");
         leave_flag = 1;
     } else{
         string nome_canal = split(channel, ' ');
+
+        // Caso de inserção em canal existente
         for (auto canal : canais) {
             if (canal->name == nome_canal) {
                 canal->usuarios.push_back(cliente);
                 canal_atual = canal;
             }
         }
+
+        // Caso de inserção em novo canal
         if (canal_atual == NULL) {
             canal_atual = new Channel;
             canal_atual->fd_admin = cliente->fd_cliente;
@@ -178,44 +190,106 @@ void *handle_client(void *arg){
             cliente->muted = false;
             canais.push_back(canal_atual);
         }
+        // Envio de mensagem ao log do servidor e broadcast para possíveis membros do canal
         sprintf(mensagem, "%s entrou", cliente->nickname);
         cout << mensagem << " em " << canal_atual->name << endl;
         send_message(mensagem, cliente->fd_cliente, canal_atual);
     }
 
+    // Limpeza do buffer
     bzero(mensagem, LIMITE_MENSAGEM);
 
+    // Loop principal
     while(!leave_flag){
+        // Possível recepção de mensagem ou comando
         int receive = recv(cliente->fd_cliente, mensagem, LIMITE_MENSAGEM, 0);
+
+        // Variável auxiliar para casos de remoção de usuário (comando kick)
         int removed_fd = -1;
         if(receive > 0){
+            // Obter mensagem, converter e splitar para casos de possíveis parâmetros
             string aux = convert_char_to_string(mensagem);
             string parametro = split(mensagem, ' ');
+
+            // Comando ping
             if (strcmp(mensagem, "/ping") == 0) {
                 strcpy(mensagem, "Pong!");
                 write(cliente->fd_cliente, mensagem, strlen(mensagem));
-            } else if (aux.find("/nickname") != string::npos) {
+            }
+            // Comando de alteração de nickname
+            else if (aux.find("/nickname") != string::npos) {
                 strcpy(cliente->nickname, convert_string_to_char(parametro));
-            } else if (aux.find("/kick") != string::npos) {
+            }
+            // Comando de kick
+            else if (aux.find("/kick") != string::npos) {
                 if (cliente->adm) {
                     int user_fd = get_user_fd_by_nickname(canal_atual, parametro);
                     if (user_fd == -1) {
+                        // Mensagem para log do servidor
                         cout << "Esse usuario nao se encontra no canal!\n";
                     } else {
                         removed_fd = user_fd;
-                        // close(user_fd);
                     }
                 }
             }
+            // Comando whois
+            else if(aux.find("/whois") != string::npos){
+                if (cliente->adm) {
+                    int user_fd = get_user_fd_by_nickname(canal_atual, parametro);
+                    if (user_fd == -1) {
+                        // Mensagem para log do servidor
+                        cout << "Esse usuario nao se encontra no canal!\n";
+                    } else {
+                        for (auto user : canal_atual->usuarios) {
+                            if (user->nickname == parametro)
+                                strcpy(mensagem, inet_ntoa(user->address.sin_addr));
+                        }
+                        // Envio somente para administrador do canal
+                        write(cliente->fd_cliente, mensagem, strlen(mensagem));
+                    }
+                }
+            }
+            // Comando mute
+            else if(aux.find("/mute") != string::npos){
+                if(cliente->adm){
+                    int user_fd = get_user_fd_by_nickname(canal_atual, parametro);
+                    if(user_fd == -1){
+                        cout << "Esse usuario nao se encontra no canal!\n";
+                    }else{
+                        mute_user(canal_atual, user_fd);
+                    }
+                }
+            }
+            // Comando unmute
+            else if(aux.find("/unmute") != string::npos){
+                if(cliente->adm){
+                    int user_fd = get_user_fd_by_nickname(canal_atual, parametro);
+                    if(user_fd == -1){
+                        cout << "Esse usuario nao se encontra no canal!\n";
+                    }else{
+                        unmute_user(canal_atual, user_fd);
+                    }
+                }
+            }
+            // Caso de envio de mensagens normais
             else if (strlen(mensagem) > 0){
                 char buffer[LIMITE_MENSAGEM]; 
                 strcpy(buffer, cliente->nickname);
                 strcat(buffer, ": ");
                 strcat(buffer, mensagem);
-                send_message(buffer, cliente->fd_cliente, canal_atual);
-                cout << buffer << "\n";
+                // Verificação do status mute do usuário
+                if(!cliente->muted){
+                    send_message(buffer, cliente->fd_cliente, canal_atual);
+                    cout << buffer << "\n";
+                }else{
+                    // Caso mutado o usuário receberá mensagem exclusiva para alerta-lo
+                    strcpy(mensagem, "Você não pode enviar mensagens no canal pois o adm te mutou\n");
+                    write(cliente->fd_cliente, mensagem, strlen(mensagem));
+                }
             }
-        } else if(receive == 0 || strcmp(mensagem, "/quit") == 0){
+        }
+        // Comando quit
+        else if(receive == 0 || strcmp(mensagem, "/quit") == 0){
             sprintf(mensagem, "%s saiu do canal", cliente->nickname);
             cout << mensagem << endl;
             send_message(mensagem, cliente->fd_cliente, canal_atual);
@@ -224,21 +298,25 @@ void *handle_client(void *arg){
             if (canal_atual->usuarios.size() == 0) {
                 channel_remove(canal_atual->name);
             }
-        }else{
-            cout << "Erro -1" << endl;
+        }
+        // Casos de erro
+        else{
+            cout << "Erro -1\n" << endl;
             leave_flag = 1;
         }
         bzero(mensagem, LIMITE_MENSAGEM);
+
+        // Caso necessária remoção de algum usuário
         if (removed_fd != -1) {
             user_remove(canal_atual, removed_fd);
-            queue_remove(removed_fd);
+            server_client_remove(removed_fd);
             strcpy(mensagem, "O adm te removeu deste canal :(\n");
+            // Mensagem exclusiva alertando a remoção forçada do canal
             write(removed_fd, mensagem, strlen(mensagem));
         }
     }
-    // close(cliente->fd_cliente);
-    queue_remove(cliente->fd_cliente);
-    //free(cliente);
+    server_client_remove(cliente->fd_cliente);
+    // Finalização da thread
     pthread_detach(pthread_self());
 
     return NULL;
@@ -246,10 +324,10 @@ void *handle_client(void *arg){
 
 int main(void) {
 
-    int fd_servidor;  //? fd_cliente será um array?
+    int fd_servidor;
     int option = 1;
     sockaddr_in endereco_servidor, endereco_cliente;
-    // pthread_t tid;
+    pthread_t tid;
 
     // Criação do socket do servidor:
     fd_servidor = socket(AF_INET, SOCK_STREAM, 0);
@@ -270,7 +348,7 @@ int main(void) {
     signal(SIGPIPE, SIG_IGN);
 
     if(setsockopt(fd_servidor, SOL_SOCKET,(SO_REUSEPORT | SO_REUSEADDR),(char*)&option,sizeof(option)) < 0){
-		perror("ERROR: setsockopt failed");
+		perror("ERROR: setsockopt failed\n");
         return -1;
 	}
 
@@ -290,178 +368,32 @@ int main(void) {
         cout << "Servidor escutando por requisições!\n";
     }
 
-    // Inicialização de variável de controle de estado do servidor:
-    /*bool shut_down = false;
-
-    // Aceite de uma requisição:
-    tamanho_endereco = sizeof(endereco_cliente);
-    fd_cliente = accept(fd_servidor, (sockaddr*) &endereco_cliente, &tamanho_endereco);
-
-    // Verificação se o aceite foi válido:
-    if (fd_cliente < 0){
-        cerr << "Não foi possível se conectar ao cliente!\n";
-        exit(-1);
-    } 
-    cout << "Cliente conectado no IP: " << inet_ntoa(endereco_cliente.sin_addr) << " e porta " << ntohs(endereco_cliente.sin_port) << "\n";
-
-    while(!shut_down) {
-
-        // Recepção da(s) mensagem(s) do cliente (pois podem ser quebradas se forem maiores que LIMITE_MENSAGEM):
-        while (true) {
-            bzero(mensagem_cliente, LIMITE_MENSAGEM);
-
-            // Recebimento de 1 bloco da mensagem do cliente:
-            if (recv(fd_cliente, mensagem_cliente, sizeof(mensagem_cliente), 0) == -1) {
-                cout << "Mensagem não recebida!\n";
-                exit(-1);
-            }
-
-            if (strlen(mensagem_cliente) == 0)
-                break;
-
-            if (strcmp(mensagem_cliente, "/quit") == 0) {
-                shut_down = true;
-                break;
-            }
-
-            if (strcmp(mensagem_cliente, "/ping") == 0) {
-                cout << "Ping recebido\n";
-                strcpy(mensagem_servidor, "pong!");
-                send(fd_cliente, mensagem_servidor, strlen(mensagem_servidor) + 1, 0);
-                break;
-            } 
-
-            cout << mensagem_cliente << "\n";
-        }
-    }
-
-    // Fechamento do socket:
-    close(fd_servidor);
-    cout << "Socket fechado!\n";*/
     int connfd = 0;
+
+    // Loop principal
     while(1){
         socklen_t clilen = sizeof(endereco_cliente);
         connfd = accept(fd_servidor, (struct sockaddr*)&endereco_cliente, &clilen);
     
+        // Verificação do número de clientes conectados
         if(int(conectados.size()) == MAX_CLIENTS){
-            printf("Max clients reched.\n");
+            printf("Max clients reached.\n");
             close(connfd);
             continue;
         }
 
+        // Criação de usuário
         Client *cliente = (Client *)malloc(sizeof(Client));
         cliente->address = endereco_cliente;
         cliente->fd_cliente = connfd;
+        // Inserção de cliente em lista de conexões
         pthread_mutex_lock(&clients_mutex);
         conectados.push_back(cliente);
         pthread_mutex_unlock(&clients_mutex);
-        pthread_create(&cliente->thread, NULL, &handle_client, (void *)cliente);
+        // Criação da thread
+        pthread_create(&tid, NULL, &handle_client, (void *)cliente);
         sleep(1);
     }
 
     return 0;
 }
-
-
-// #include <iostream>
-// #include <unistd.h>
-// #include <sys/socket.h>
-// #include <arpa/inet.h>
-// #include <bits/stdc++.h>
-
-// #define LIMITE_MENSAGEM 4097
-
-// using namespace std;
-
-
-// int main(void) {
-
-//     int fd_servidor, fd_cliente;  //? fd_cliente será um array?
-//     sockaddr_in endereco_servidor, endereco_cliente;
-//     socklen_t tamanho_endereco;
-
-//     // Criação de buffer para as mensagens:
-//     char mensagem_cliente[LIMITE_MENSAGEM], mensagem_servidor[LIMITE_MENSAGEM];
-
-//     // Criação do socket do servidor:
-//     fd_servidor = socket(AF_INET, SOCK_STREAM, 0);
-
-//     // Verificação se o socket foi devidamente criado:
-//     if (fd_servidor == -1) {
-//         cerr << "Erro ao criar o socket!\n";
-//         exit(-1);
-//     }
-//     cout << "Socket criado com sucesso!\n";
-
-//     // Configuração do endereço do servidor:
-//     endereco_servidor.sin_family = AF_INET;
-//     endereco_servidor.sin_port = htons(2000);
-//     endereco_servidor.sin_addr.s_addr = INADDR_ANY;
-
-//     // Atribuição do endereço ao socket:
-//     if (bind(fd_servidor, (sockaddr *) &endereco_servidor, sizeof(endereco_servidor)) == -1) {
-//         cerr << "Erro ao realizar bind do socket!\n";
-//         exit(-1);
-//     } else {
-//         cout << "Bind realizado com sucesso!\n";
-//     }
-
-//     // Marcação do socket para a escuta de um único cliente:
-//     if (listen(fd_servidor, 1) == -1) {
-//         cerr << "Erro na marcação de escuta por clientes!\n";
-//         exit(-1);
-//     } else {
-//         cout << "Servidor escutando por requisições!\n";
-//     }
-
-//     // Inicialização de variável de controle de estado do servidor:
-//     bool shut_down = false;
-
-//     // Aceite de uma requisição:
-//     tamanho_endereco = sizeof(endereco_cliente);
-//     fd_cliente = accept(fd_servidor, (sockaddr*) &endereco_cliente, &tamanho_endereco);
-
-//     // Verificação se o aceite foi válido:
-//     if (fd_cliente < 0){
-//         cerr << "Não foi possível se conectar ao cliente!\n";
-//         exit(-1);
-//     } 
-//     cout << "Cliente conectado no IP: " << inet_ntoa(endereco_cliente.sin_addr) << " e porta " << ntohs(endereco_cliente.sin_port) << "\n";
-
-//     while(!shut_down) {
-
-//         // Recepção da(s) mensagem(s) do cliente (pois podem ser quebradas se forem maiores que LIMITE_MENSAGEM):
-//         while (true) {
-//             bzero(mensagem_cliente, LIMITE_MENSAGEM);
-
-//             // Recebimento de 1 bloco da mensagem do cliente:
-//             if (recv(fd_cliente, mensagem_cliente, sizeof(mensagem_cliente), 0) == -1) {
-//                 cout << "Mensagem não recebida!\n";
-//                 exit(-1);
-//             }
-
-//             if (strlen(mensagem_cliente) == 0)
-//                 break;
-
-//             if (strcmp(mensagem_cliente, "/quit") == 0) {
-//                 shut_down = true;
-//                 break;
-//             }
-
-//             if (strcmp(mensagem_cliente, "/ping") == 0) {
-//                 cout << "Ping recebido\n";
-//                 strcpy(mensagem_servidor, "pong!");
-//                 send(fd_cliente, mensagem_servidor, strlen(mensagem_servidor) + 1, 0);
-//                 break;
-//             } 
-
-//             cout << mensagem_cliente << "\n";
-//         }
-//     }
-
-//     // Fechamento do socket:
-//     close(fd_servidor);
-//     cout << "Socket fechado!\n";
-
-//     return 0;
-// }

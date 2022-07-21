@@ -4,17 +4,18 @@
 #include <arpa/inet.h>
 #include <bits/stdc++.h>
 
-#define LIMITE_MENSAGEM 4097
+#define LIMITE_MENSAGEM 4097    // Definição do limite do tamanho da mensagem
 
 using namespace std;
 
-int fd_cliente;
-string entrada;
-char nickname[50];
+int fd_cliente; // Número de identificação do cliente
+string entrada; // Entrada padrão
+char nickname[50];  // Nickname do usuário
 sockaddr_in endereco_servidor;
 char mensagem_cliente[LIMITE_MENSAGEM];
 char mensagem_servidor[LIMITE_MENSAGEM];
 
+// Função para conexão do servidor
 bool conectar_servidor() {
     // Configuração da porta e IP para o mesmo endereço do servidor:
     endereco_servidor.sin_family = AF_INET;
@@ -26,6 +27,7 @@ bool conectar_servidor() {
     return connect(fd_cliente, (sockaddr *) &endereco_servidor, sizeof(endereco_servidor)) != -1;
 }
 
+// Função para envio de mensagem ao servidor
 bool mandar_mensagem_servidor(string mensagem_total) {
     memset(mensagem_cliente, 0, LIMITE_MENSAGEM * sizeof(char));
     // Envio da mensagem em blocos de no máximo LIMITE_MENSAGEM:
@@ -61,7 +63,8 @@ string split(string str, char delim){
     return new_str;
 }
 
-void str_trim_lf (char* arr, int length) {
+// Função auxiliar para correção de caracter
+void fix_string (char* arr, int length) {
     int i;
     for (i = 0; i < length; i++) { // trim \n
         if (arr[i] == '\n') {
@@ -71,12 +74,14 @@ void str_trim_lf (char* arr, int length) {
     }
 }
 
+// Tratamento do SIGINT
 void ctrlc_handler(int s) {
     entrada = "/quit";
 }
 
+// Função representando a lógica de recebimento de mensagens
 void *recv_thread(void *args){
-    while (true) {
+    while (true) {  // Loop principal
         char mensagem_servidor[LIMITE_MENSAGEM];
         int recv_response = recv(
             fd_cliente,
@@ -84,6 +89,7 @@ void *recv_thread(void *args){
             sizeof(mensagem_servidor),
             MSG_NOSIGNAL
         );
+        // Recebimento e impressão da mensagem recebida pelo servidor
         if (recv_response != -1) {
             cout << mensagem_servidor << "\n";
             if (strcmp(mensagem_servidor, "O adm te removeu deste canal :(\n") == 0) {
@@ -91,6 +97,7 @@ void *recv_thread(void *args){
                 return NULL;
             }
         }
+        // Tratamento do buffer
         memset(mensagem_servidor, 0, sizeof(mensagem_cliente));
     }
     return NULL;
@@ -139,19 +146,30 @@ int main() {
     else
         cerr << "Erro ao conectar com o servidor!\n";
 
-    // Leitura do nick:
-    cout << "Bem vindo! Para comecar, digite um nickname: ";
-    fgets(nickname, 50, stdin);
-    str_trim_lf(nickname, 50);
+    // Leitura do nick e sua verificação:
+    memset(nickname, 0, 50);
+    while(strlen(nickname) <= 1){
+        cout << "Bem vindo! Para comecar, digite um nickname: ";
+        fgets(nickname, 50, stdin);
+        fix_string(nickname, 50);
+    }
 
     // Envio do nickname ao servidor:
     send(fd_cliente, nickname, 50, 0);
 
-    // Leitura do canal:
+    // Leitura do canal e sua verificação:
     entrada = "";
     while (entrada.find("/join") == string::npos) {
-        cout << "Digite /join <nomeDoCanal> para entrar em um canal!\n";
+        cout << "Digite /join <nomeDoCanal> para entrar em um canal!\nLembre-se que o padrão é: & ou # seguido de string sem espaços\n";
         getline(cin, entrada);
+        if(entrada.find(',') != string::npos)
+            entrada = "";
+        if(entrada[6] == '&')   break;
+        else if(entrada[6] == '#')  break;
+        else if(entrada[6] != '&' && entrada[6] != '#')
+            entrada = "";
+        if(entrada.find_last_of(" ", 0) != 5)
+            entrada = "";    
     }
     mandar_mensagem_servidor(entrada);
 
@@ -165,12 +183,14 @@ int main() {
 
     bool shut_down = false;
 
+    // Loop principal, para que as threads ocorram até o envio do comando quit
     while (!shut_down) {
         if (entrada == "/quit")
             shut_down = true;
         sleep(1);
     }
 
+    // Finalização de ambas as threads
     pthread_detach(input_thread);
     pthread_detach(output_thread);
 
