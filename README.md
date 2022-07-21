@@ -30,4 +30,4 @@ A execução de ambas as aplicações também fica por parte do [Makefile](https
 - /whois <nickUsuario> permite que somente o administrador do canal receba o endereço IP do usuário selecionado.
 
 ### Execução em Vídeo
-Para demonstração do código, pode-se acessar este [link]() em que os integrantes do grupo apresentam as diferentes funcionalidades de ambas as partes desta aplicação e comentam sobre o a confecção e execução do código.
+Para demonstração do código, pode-se acessar este [link](https://drive.google.com/file/d/1Ms_Xpz5hTmXvGfk87p-IB8TPQTmrO_rZ/view?usp=drivesdk) em que os integrantes do grupo apresentam as diferentes funcionalidades de ambas as partes desta aplicação e comentam sobre o a confecção e execução do código. Embora não esteja na gravação, o código apresentou bons resultados quando as aplicações de servidor e cliente foram executadas em máquinas diferentes presentes na mesma rede.
