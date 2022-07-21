@@ -2,7 +2,6 @@
 #define _CLIENT_H_
 
 // Definição do limite de tamanho das mensagens trocadas entre Servidor e Cliente
-#define LIMITE_MENSAGEM 4097
 
 #include <thread>
 #include <pthread.h>
@@ -14,99 +13,126 @@
 
 using namespace std;
 
-// Classe do Cliente da aplicação
-class Client{
-    private:
-        // Variável de controle
-        bool shutdown;
+typedef struct{
+    struct sockaddr_in address;
+    int fd_cliente;
+    string nickname;
+    bool adm;
+    bool muted;
+    bool shutdown;
+}Client;
 
-        // Variável para criação do socket
-        int fd_cliente;
+#endif
 
-        // Endereço do Servidor
-        sockaddr_in endereco_servidor;
+// #ifndef _CLIENT_H_
+// #define _CLIENT_H_
 
-        // Entrada do Cliente
-        string entrada;
+// // Definição do limite de tamanho das mensagens trocadas entre Servidor e Cliente
+// #define LIMITE_MENSAGEM 4097
 
-        // Apelido
-        string nickname;
+// #include <thread>
+// #include <pthread.h>
+// #include <iostream>
+// #include <unistd.h>
+// #include <arpa/inet.h>
+// #include <sys/socket.h>
+// #include <bits/stdc++.h>
 
-        // Buffer para mensagens
-        char mensagem_cliente[LIMITE_MENSAGEM];
+// using namespace std;
 
-        // Administra canal
-        bool administra;
+// // Classe do Cliente da aplicação
+// class Client{
+//     private:
+//         // Variável de controle
+//         bool shutdown;
 
-        // Se pode ou não enviar mensagens
-        bool muted;
+//         // Variável para criação do socket
+//         int fd_cliente;
 
-        // Thread do cliente
-        thread self_thread;
+//         // Endereço do Servidor
+//         sockaddr_in endereco_servidor;
 
-        // Controller
-        void thread_logic();
+//         // Entrada do Cliente
+//         string entrada;
 
-        // Input thread
-        void recv_thread();
+//         // Apelido
+//         string nickname;
 
-        // Output thread
-        void send_thread();
+//         // Buffer para mensagens
+//         char mensagem_cliente[LIMITE_MENSAGEM];
 
-    public:
-        // Endereço do Cliente
-        sockaddr_in endereco_cliente;
+//         // Administra canal
+//         bool administra;
 
-        // Construtor
-        Client(string nick);
+//         // Se pode ou não enviar mensagens
+//         bool muted;
 
-        // Conexão com servidor
-        bool conectar_servidor(sockaddr_in *endereco_servidor);
+//         // Thread do cliente
+//         thread self_thread;
 
-        // Envio de mansagens
-        bool mandar_mensagem_servidor(string mensagem_total);
+//         // Controller
+//         void thread_logic();
 
-        // Limpeza do buffer mensagem_cliente:
-        void limpar_buffer();
+//         // Input thread
+//         void recv_thread();
 
-        // Get fd_cliente
-        int get_fd_cliente(void);
+//         // Output thread
+//         void send_thread();
 
-        // Set fd_cliente
-        void set_fd_cliente(int fd_cliente);
+//     public:
+//         // Endereço do Cliente
+//         sockaddr_in endereco_cliente;
 
-        // Get shutdown
-        bool get_shutdown(void);
+//         // Construtor
+//         Client(string nick);
 
-        // Set shutdown
-        void set_shutdown(bool shutdown);
+//         // Conexão com servidor
+//         bool conectar_servidor(sockaddr_in *endereco_servidor);
 
-        // Get mensagem
-        char* get_mensagem();
+//         // Envio de mansagens
+//         bool mandar_mensagem_servidor(string mensagem_total);
 
-        // Get endereco_servidor
-        sockaddr_in get_endereco_servidor(void);
+//         // Limpeza do buffer mensagem_cliente:
+//         void limpar_buffer();
 
-        // Set endereco_servidor
-        void set_endereco_servidor(sockaddr_in endereco);
+//         // Get fd_cliente
+//         int get_fd_cliente(void);
 
-        // Set nickname
-        void set_nickname(string new_nick);
+//         // Set fd_cliente
+//         void set_fd_cliente(int fd_cliente);
 
-        // Set entrada
-        void set_entrada(string entrada);
+//         // Get shutdown
+//         bool get_shutdown(void);
 
-        // Get nickname
-        string get_nickname();
+//         // Set shutdown
+//         void set_shutdown(bool shutdown);
 
-        // Inicializa thread
-        void start_thread();
+//         // Get mensagem
+//         char* get_mensagem();
 
-        // Finaliza thread
-        void join_thread();
+//         // Get endereco_servidor
+//         sockaddr_in get_endereco_servidor(void);
 
-        // CTRL C callback handler:
-        void ctrlc_handler(int s);
-};
+//         // Set endereco_servidor
+//         void set_endereco_servidor(sockaddr_in endereco);
 
-#endif /*_CLIENT_H_*/
+//         // Set nickname
+//         void set_nickname(string new_nick);
+
+//         // Set entrada
+//         void set_entrada(string entrada);
+
+//         // Get nickname
+//         string get_nickname();
+
+//         // Inicializa thread
+//         void start_thread();
+
+//         // Finaliza thread
+//         void join_thread();
+
+//         // CTRL C callback handler:
+//         void ctrlc_handler(int s);
+// };
+
+// #endif /*_CLIENT_H_*/

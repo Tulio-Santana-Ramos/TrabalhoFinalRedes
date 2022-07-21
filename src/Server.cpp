@@ -165,7 +165,6 @@ void Server::handle_client_logic(Client *client) {
 
     // remover_cliente(client);
     pthread_detach(pthread_self());
-
 }
 
 void Server::enviar_mensagem(char* mensagem){
@@ -192,7 +191,7 @@ void Server::remover_cliente(Client *cliente) {
             break;
     }
 
-    Server::clientes.erase(Server::clientes.begin() + 0);
+    Server::clientes.erase(Server::clientes.begin() + i);
 }
 
 

@@ -3,6 +3,7 @@
     "*.html": "html",
     "iostream": "cpp",
     "tuple": "cpp",
-    "thread": "cpp"
+    "thread": "cpp",
+    "*.tcc": "cpp"
   }
 }

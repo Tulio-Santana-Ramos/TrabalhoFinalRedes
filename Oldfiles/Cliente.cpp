@@ -96,10 +96,10 @@ void *send_thread(void *args){
     while (true) {
         // cout << "Digite sua mensagem ou comando: \n";
         getline(cin, entrada);
-        if (entrada == "/quit")
+        if (entrada == "/quit") {
+            mandar_mensagem_servidor(entrada);
             return NULL;
-        // if(entrada.find("nickname") != string::npos)
-        //     nickname = split(entrada, ' ');
+        }
         if (!mandar_mensagem_servidor(entrada))
             cerr << "Erro ao enviar a mensagem!\n";
     }
@@ -141,6 +141,14 @@ int main() {
 
     // Envio do nickname ao servidor:
     send(fd_cliente, nickname, 50, 0);
+
+    // Leitura do canal:
+    entrada = "";
+    while (entrada.find("/join") == string::npos) {
+        cout << "Digite /join <nomeDoCanal> para entrar em um canal!\n";
+        getline(cin, entrada);
+    }
+    mandar_mensagem_servidor(entrada);
 
     // Criação da thread de recepção de mensagens:
     pthread_t input_thread;

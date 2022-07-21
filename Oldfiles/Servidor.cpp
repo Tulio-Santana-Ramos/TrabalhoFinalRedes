@@ -24,7 +24,9 @@ struct Channel{
 };
 
 vector <Client *> conectados;
+vector <Channel *> canais;
 pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t channels_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void str_trim_lf (char* arr, int length) {
   int i;
@@ -34,6 +36,31 @@ void str_trim_lf (char* arr, int length) {
       break;
     }
   }
+}
+
+// Função auxiliar para divisão de strings
+string split(char str[], char delim){
+    int i = 0, start = 0, end = int(strlen(str)) - 1;
+
+    while(i++ < int(strlen(str))){
+        if(str[i] == delim)
+            start = i + 1;
+    }
+    string new_str = "";
+    new_str.append(str, start, end - start + 1);
+    return new_str;
+}
+
+string convert_char_to_string(char str[]){
+    string new_string(str);
+    return new_string;
+}
+
+char *convert_string_to_char(string str) {
+    // char new_string [str.length() + 1];
+    char *new_string = (char *) calloc(str.length() + 1, 1);
+    strcpy(new_string, str.c_str());
+    return new_string;
 }
 
 void queue_remove(int fd){
@@ -48,12 +75,61 @@ void queue_remove(int fd){
     pthread_mutex_unlock(&clients_mutex);
 }
 
-void send_message(char mensagem[], int fd){
+void channel_remove(string channel_name) {
+    pthread_mutex_lock(&channels_mutex);
+
+    for(uint i = 0; i < canais.size(); i++){
+        if(canais[i]->name == channel_name){
+            canais.erase(canais.begin() + i);
+            break;
+        }
+    }
+    pthread_mutex_unlock(&channels_mutex);
+}
+
+void user_remove(Channel *canal, int fd_cliente) {
+    pthread_mutex_lock(&channels_mutex);
+
+    for(uint i = 0; i < canal->usuarios.size(); i++){
+        if(canal->usuarios[i]->fd_cliente == fd_cliente){
+            canal->usuarios.erase(canal->usuarios.begin() + i);
+            cout << "achou\n";
+            break;
+        }
+    }
+    pthread_mutex_unlock(&channels_mutex);
+}
+
+int get_user_fd_by_nickname(Channel *canal, string nickname) {
+    for (auto user : canal->usuarios) {
+        if (user->nickname == nickname)
+            return user->fd_cliente;
+    }
+    return -1;
+}
+
+// void send_message(char mensagem[], int fd){
+//     pthread_mutex_lock(&clients_mutex);
+
+//     for(uint i = 0; i < conectados.size(); i++){
+//         if(conectados[i]->fd_cliente != fd){
+//             if(write(conectados[i]->fd_cliente, mensagem, strlen(mensagem)) < 0){
+//                 perror("Erro no wirte");
+//                 break;
+//             }
+//         }
+//     }
+//     pthread_mutex_unlock(&clients_mutex);
+// }
+
+void send_message(char mensagem[], int fd, Channel* canal){
     pthread_mutex_lock(&clients_mutex);
 
-    for(uint i = 0; i < conectados.size(); i++){
-        if(conectados[i]->fd_cliente != fd){
-            if(write(conectados[i]->fd_cliente, mensagem, strlen(mensagem)) < 0){
+    strcat(mensagem, "\n");
+
+    for(auto cliente : canal->usuarios){
+        if(cliente->fd_cliente != fd){
+            if(write(cliente->fd_cliente, mensagem, strlen(mensagem)) < 0){
                 perror("Erro no wirte");
                 break;
             }
@@ -65,45 +141,97 @@ void send_message(char mensagem[], int fd){
 void *handle_client(void *arg){
     char mensagem[LIMITE_MENSAGEM];
     char name[50];
+    char channel[50];
     int leave_flag = 0;
 
     Client *cliente = (Client *)arg;
+    Channel *canal_atual = NULL;
 
     if(recv(cliente->fd_cliente, name, 50, 0) <= 0 || strlen(name) < 2 || strlen(name) >= 50 - 1){
         printf("N inseriu nome");
         leave_flag = 1;
-    }else{
-        strcpy(cliente->nickname, name);
-        sprintf(mensagem, "%s entrou\n", cliente->nickname);
-        printf("%s\n", mensagem);
-        send_message(mensagem, cliente->fd_cliente);
+    } else {
+        stpcpy(cliente->nickname, name);
+    }
+    bzero(mensagem, LIMITE_MENSAGEM);
+
+    if(recv(cliente->fd_cliente, channel, 50, 0) <= 0 || strlen(channel) < 2 || strlen(channel) >= 50 - 1){
+        printf("N inseriu canal");
+        leave_flag = 1;
+    } else{
+        string nome_canal = split(channel, ' ');
+        for (auto canal : canais) {
+            if (canal->name == nome_canal) {
+                canal->usuarios.push_back(cliente);
+                canal_atual = canal;
+            }
+        }
+        if (canal_atual == NULL) {
+            canal_atual = new Channel;
+            canal_atual->fd_admin = cliente->fd_cliente;
+            canal_atual->usuarios.push_back(cliente);
+            canal_atual->name = nome_canal;
+            cliente->adm = true;
+            cliente->muted = false;
+            canais.push_back(canal_atual);
+        }
+        sprintf(mensagem, "%s entrou", cliente->nickname);
+        cout << mensagem << " em " << canal_atual->name << endl;
+        send_message(mensagem, cliente->fd_cliente, canal_atual);
     }
 
     bzero(mensagem, LIMITE_MENSAGEM);
 
     while(!leave_flag){
         int receive = recv(cliente->fd_cliente, mensagem, LIMITE_MENSAGEM, 0);
+        int removed_fd = -1;
         if(receive > 0){
-            if(strlen(mensagem) > 0){
+            string aux = convert_char_to_string(mensagem);
+            string parametro = split(mensagem, ' ');
+            if (strcmp(mensagem, "/ping") == 0) {
+                strcpy(mensagem, "Pong!");
+                write(cliente->fd_cliente, mensagem, strlen(mensagem));
+            } else if (aux.find("/nickname") != string::npos) {
+                strcpy(cliente->nickname, convert_string_to_char(parametro));
+            } else if (aux.find("/kick") != string::npos) {
+                if (cliente->adm) {
+                    int user_fd = get_user_fd_by_nickname(canal_atual, parametro);
+                    if (user_fd == -1) {
+                        cout << "Esse usuario nao se encontra no canal!\n";
+                    } else {
+                        
+                        user_remove(canal_atual, user_fd);
+                        queue_remove(user_fd);
+                        strcpy(mensagem, "O adm te removeu deste canal :(\n");
+                        write(user_fd, mensagem, strlen(mensagem));
+                        // close(user_fd);
+                    }
+                }
+            }
+            else if (strlen(mensagem) > 0){
                 char buffer[LIMITE_MENSAGEM]; 
                 strcpy(buffer, cliente->nickname);
                 strcat(buffer, ": ");
                 strcat(buffer, mensagem);
-                send_message(buffer, cliente->fd_cliente);
+                send_message(buffer, cliente->fd_cliente, canal_atual);
                 cout << buffer << "\n";
             }
-        }else if(receive == 0 || strcmp(mensagem, "/quit") == 0){
-            sprintf(mensagem, "%s has left\n", cliente->nickname);
+        } else if(receive == 0 || strcmp(mensagem, "/quit") == 0){
+            sprintf(mensagem, "%s saiu do canal", cliente->nickname);
             cout << mensagem << endl;
-            send_message(mensagem, cliente->fd_cliente);
+            send_message(mensagem, cliente->fd_cliente, canal_atual);
             leave_flag = 1;
+            user_remove(canal_atual, cliente->fd_cliente);
+            if (canal_atual->usuarios.size() == 0) {
+                channel_remove(canal_atual->name);
+            }
         }else{
             cout << "Erro -1" << endl;
             leave_flag = 1;
         }
         bzero(mensagem, LIMITE_MENSAGEM);
     }
-    close(cliente->fd_cliente);
+    // close(cliente->fd_cliente);
     queue_remove(cliente->fd_cliente);
     //free(cliente);
     pthread_detach(pthread_self());
