@@ -84,8 +84,13 @@ void *recv_thread(void *args){
             sizeof(mensagem_servidor),
             MSG_NOSIGNAL
         );
-        if (recv_response != -1)
+        if (recv_response != -1) {
             cout << mensagem_servidor << "\n";
+            if (strcmp(mensagem_servidor, "O adm te removeu deste canal :(\n") == 0) {
+                entrada = "/quit";
+                return NULL;
+            }
+        }
         memset(mensagem_servidor, 0, sizeof(mensagem_cliente));
     }
     return NULL;

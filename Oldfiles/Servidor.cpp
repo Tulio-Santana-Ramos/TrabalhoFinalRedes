@@ -15,6 +15,7 @@ struct Client{
     bool adm;
     bool muted;
     bool shutdown;
+    pthread_t thread;
 };
 
 struct Channel{
@@ -92,6 +93,8 @@ void user_remove(Channel *canal, int fd_cliente) {
 
     for(uint i = 0; i < canal->usuarios.size(); i++){
         if(canal->usuarios[i]->fd_cliente == fd_cliente){
+            // pthread_detach(canal->usuarios[i]->thread);
+            // canal->usuarios[i] = NULL;
             canal->usuarios.erase(canal->usuarios.begin() + i);
             cout << "achou\n";
             break;
@@ -199,11 +202,7 @@ void *handle_client(void *arg){
                     if (user_fd == -1) {
                         cout << "Esse usuario nao se encontra no canal!\n";
                     } else {
-                        
-                        user_remove(canal_atual, user_fd);
-                        queue_remove(user_fd);
-                        strcpy(mensagem, "O adm te removeu deste canal :(\n");
-                        write(user_fd, mensagem, strlen(mensagem));
+                        removed_fd = user_fd;
                         // close(user_fd);
                     }
                 }
@@ -230,6 +229,12 @@ void *handle_client(void *arg){
             leave_flag = 1;
         }
         bzero(mensagem, LIMITE_MENSAGEM);
+        if (removed_fd != -1) {
+            user_remove(canal_atual, removed_fd);
+            queue_remove(removed_fd);
+            strcpy(mensagem, "O adm te removeu deste canal :(\n");
+            write(removed_fd, mensagem, strlen(mensagem));
+        }
     }
     // close(cliente->fd_cliente);
     queue_remove(cliente->fd_cliente);
@@ -244,7 +249,7 @@ int main(void) {
     int fd_servidor;  //? fd_cliente será um array?
     int option = 1;
     sockaddr_in endereco_servidor, endereco_cliente;
-    pthread_t tid;
+    // pthread_t tid;
 
     // Criação do socket do servidor:
     fd_servidor = socket(AF_INET, SOCK_STREAM, 0);
@@ -350,7 +355,7 @@ int main(void) {
         pthread_mutex_lock(&clients_mutex);
         conectados.push_back(cliente);
         pthread_mutex_unlock(&clients_mutex);
-        pthread_create(&tid, NULL, &handle_client, (void *)cliente);
+        pthread_create(&cliente->thread, NULL, &handle_client, (void *)cliente);
         sleep(1);
     }
 
