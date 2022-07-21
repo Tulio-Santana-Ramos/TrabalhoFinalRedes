@@ -16,6 +16,8 @@ int main(){
 
     server->start_thread();
 
+    server->join_thread();
+
     // Fechamento do socket:
     close(server->get_fd_servidor());
     cout << "Socket fechado!\n";

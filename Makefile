@@ -13,7 +13,7 @@ server: lib/Server.hpp
 # g++ -g -c Servidor.cpp
 # g++ -g -o ServerSide Servidor.o -Wall -Werror
 # rm Servidor.o
-	g++ -pthread -lpthread -o ServerSide src/Server.cpp src/Client.cpp src/MainServer.cpp -Wall -Werror -I lib -g
+	g++ -pthread -lpthread -o ServerSide src/Server.cpp src/Client.cpp src/MainServer.cpp -I lib -g
 
 srun:
 	./ServerSide

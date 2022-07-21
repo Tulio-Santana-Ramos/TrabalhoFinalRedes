@@ -10,6 +10,8 @@
 #include <../lib/Client.hpp>
 #include <../lib/Channel.hpp>
 
+#define MAX_CLIENTS 10
+
 using namespace std;
 
 // Classe do Servidor da aplicação
@@ -39,17 +41,27 @@ class Server{
         // Thread principal servidor
         thread self_thread;
 
-        // Thread auxiliar para verificar novas conexões
-        thread new_connection_thread;
+        // // Thread auxiliar para verificar novas conexões
+        // thread new_connection_thread;
 
         // Main Controller
         void self_thread_logic();
 
-        // Controller de conexão de novos clientes
-        void connection_waiter_logic(Client *curr_client, int &res);
+        // Controller para gerenciamento de comunicação com os clientes:
+        // void *handle_client_logic(void *arg);
+        void handle_client_logic(Client *client);
 
-        // Inicializa thread de conexão
-        void start_connection_waiter();
+        // Função de envio de mensagens:
+        void enviar_mensagem(char *mensagem);
+
+        // Função de deleção de cliente:
+        void remover_cliente(Client *cliente);
+
+        // // Controller de conexão de novos clientes
+        // void connection_waiter_logic(Client *curr_client, int &res);
+
+        // // Inicializa thread de conexão
+        // void start_connection_waiter();
 
         // Controller da lógica de troca de mensagens
         //void exchange_logic(Client *curr_client);
@@ -80,6 +92,9 @@ class Server{
 
         // Inicializa thread principal
         void start_thread();
+
+        // Finaliza thread principal
+        void join_thread();
 
     // TODO: Adaptação do loop while presente em Servidor.cpp em Oldfiles
 };
